@@ -128,7 +128,19 @@ function mybasics_register_settings() {
     add_settings_field('error_nonce',             __( 'Security Check Error (Registration)', 'mybasics-custom-login' ), 'mybasics_field_text', 'mybasics', 'mybasics_errors_section', ['id' => 'error_nonce',             'default' => 'Sikkerhedstjek mislykkedes. Prøv venligst igen.']);
     add_settings_field('error_security',          __( 'Security Check Error (Login)', 'mybasics-custom-login' ),      'mybasics_field_text', 'mybasics', 'mybasics_errors_section', ['id' => 'error_security',          'default' => 'Sikkerhedstjek mislykkedes.']);
 
-    // --- Section 5: Klaviyo Integration ---
+    // --- Section 5: Magic Link ---
+    add_settings_section(
+        'mybasics_magic_link_section',
+        __( 'Magic Link Login', 'mybasics-magic-login' ),
+        function() { echo '<p>' . __( 'Passwordless login via a one-time link sent by email. The link expires after 15 minutes.', 'mybasics-magic-login' ) . '</p>'; },
+        'mybasics'
+    );
+
+    add_settings_field( 'enable_magic_link', __( 'Enable Magic Link Login', 'mybasics-magic-login' ), 'mybasics_field_enable_magic_link', 'mybasics', 'mybasics_magic_link_section' );
+    add_settings_field( 'magic_link_email_subject', __( 'Email Subject', 'mybasics-magic-login' ), 'mybasics_field_text', 'mybasics', 'mybasics_magic_link_section', ['id' => 'magic_link_email_subject', 'default' => 'Dit loginlink'] );
+    add_settings_field( 'magic_link_email_body', __( 'Email Body', 'mybasics-magic-login' ), 'mybasics_field_textarea', 'mybasics', 'mybasics_magic_link_section', ['id' => 'magic_link_email_body', 'default' => "Hej,\n\nKlik p\xc3\xa5 linket herunder for at logge ind:\n\n{link}\n\nLinket er gyldigt i 15 minutter og kan kun bruges \xc3\xa9n gang.\n\nMed venlig hilsen"] );
+
+    // --- Section 6: Klaviyo Integration ---
     add_settings_section(
         'mybasics_klaviyo_section',
         __( 'Klaviyo Integration', 'mybasics-custom-login' ),
@@ -145,8 +157,9 @@ add_action( 'admin_init', 'mybasics_register_settings' );
  */
 function mybasics_sanitize_settings( $input ) {
     // 1. Checkboxes: explicitly set to '0' if missing
-    $input['enable_checkout_gate'] = isset( $input['enable_checkout_gate'] ) ? '1' : '0';
+    $input['enable_checkout_gate']       = isset( $input['enable_checkout_gate'] )       ? '1' : '0';
     $input['enable_conversion_tracking'] = isset( $input['enable_conversion_tracking'] ) ? '1' : '0';
+    $input['enable_magic_link']          = isset( $input['enable_magic_link'] )          ? '1' : '0';
 
     // 2. Sanitize Text Fields
     $input['guest_checkout_title']    = sanitize_text_field( $input['guest_checkout_title'] );
@@ -173,7 +186,11 @@ function mybasics_sanitize_settings( $input ) {
     $input['error_nonce']             = sanitize_text_field( isset( $input['error_nonce'] )             ? $input['error_nonce']             : '' );
     $input['error_security']          = sanitize_text_field( isset( $input['error_security'] )          ? $input['error_security']          : '' );
 
-    // 5. Klaviyo
+    // 5. Magic Link
+    $input['magic_link_email_subject'] = sanitize_text_field( isset( $input['magic_link_email_subject'] ) ? $input['magic_link_email_subject'] : '' );
+    $input['magic_link_email_body']    = sanitize_textarea_field( isset( $input['magic_link_email_body'] )    ? $input['magic_link_email_body']    : '' );
+
+    // 6. Klaviyo
     $input['klaviyo_api_key']         = sanitize_text_field( isset( $input['klaviyo_api_key'] ) ? $input['klaviyo_api_key'] : '' );
 
     return $input;
@@ -346,4 +363,12 @@ function mybasics_field_textarea($args) {
     $default = isset($args['default']) ? $args['default'] : '';
     $value = mybasics_get_option($id, $default);
     echo '<textarea name="mybasics_settings[' . esc_attr($id) . ']" rows="3" cols="50" class="large-text">' . esc_textarea($value) . '</textarea>';
+}
+
+function mybasics_field_enable_magic_link() {
+    $checked = mybasics_get_option( 'enable_magic_link', '1' );
+    ?>
+    <input type="checkbox" name="mybasics_settings[enable_magic_link]" value="1" <?php checked( 1, $checked, true ); ?> />
+    <p class="description"><?php _e( 'Show a &ldquo;Log ind uden adgangskode&rdquo; option on the login form. Sends a one-time link to the user&rsquo;s email. Use <code>{link}</code> in the email body as the placeholder for the magic link.', 'mybasics-magic-login' ); ?></p>
+    <?php
 }

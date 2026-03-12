@@ -57,9 +57,11 @@ add_action( 'wp_enqueue_scripts', function () {
 
     // Pass security nonce to JavaScript
     wp_localize_script( 'mybasics-magic-login-script', 'mybasicsLoginData', array(
-      'nonce' => wp_create_nonce( 'mybasics_form_switch' ),
-      'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-      'texts' => $texts
+      'nonce'            => wp_create_nonce( 'mybasics_form_switch' ),
+      'magicLinkNonce'   => wp_create_nonce( 'mybasics_magic_link' ),
+      'ajaxUrl'          => admin_url( 'admin-ajax.php' ),
+      'magicLinkEnabled' => ( isset( $options['enable_magic_link'] ) ? $options['enable_magic_link'] : '1' ) === '1',
+      'texts'            => $texts
     ));
   }
 });
@@ -430,3 +432,154 @@ function mybasics_sync_to_klaviyo_on_registration( $customer_id, $new_customer_d
         'blocking'  => false,
     ));
 }
+
+// =============================================================================
+// MAGIC LINK FEATURE
+// =============================================================================
+
+/**
+ * Inject the hidden magic-link form div after the WooCommerce forms.
+ * JS will move it inside the card on page load.
+ */
+add_action( 'woocommerce_after_customer_login_form', function () {
+    $options = get_option( 'mybasics_settings' );
+    if ( ( isset( $options['enable_magic_link'] ) ? $options['enable_magic_link'] : '1' ) !== '1' ) {
+        return;
+    }
+    ?>
+    <div id="magic-link-form" class="is-hidden" aria-hidden="true">
+        <div id="magic-link-request">
+            <div class="field">
+                <label for="magic-link-email" class="field-label">E-mailadresse</label>
+                <div class="input-wrapper">
+                    <input type="email" id="magic-link-email" class="input" placeholder="din@email.dk" autocomplete="email" />
+                </div>
+            </div>
+            <div id="magic-link-error" class="error" role="alert" aria-live="polite"></div>
+            <button type="button" id="magic-link-submit" class="btn btn-primary">Send mig et loginlink</button>
+        </div>
+        <div id="magic-link-success" class="is-hidden">
+            <p class="magic-link-success-msg">Tjek din e-mail og klik p&aring; loginlinket. Det er gyldigt i 15 minutter.</p>
+        </div>
+        <div style="margin-top:16px;text-align:center;">
+            <a href="#login" class="membership-link magic-link-back">&larr; Tilbage til login</a>
+        </div>
+    </div>
+    <?php
+}, 15 );
+
+/**
+ * Handle the AJAX request to send a magic link email.
+ * Works for both logged-out (nopriv) and logged-in users.
+ */
+add_action( 'wp_ajax_nopriv_mybasics_send_magic_link', 'mybasics_handle_send_magic_link' );
+add_action( 'wp_ajax_mybasics_send_magic_link',        'mybasics_handle_send_magic_link' );
+
+function mybasics_handle_send_magic_link() {
+    if ( ! check_ajax_referer( 'mybasics_magic_link', 'nonce', false ) ) {
+        wp_send_json_error( array( 'message' => 'Sikkerhedstjek mislykkedes.' ) );
+    }
+
+    $email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+
+    if ( empty( $email ) || ! is_email( $email ) ) {
+        wp_send_json_error( array( 'message' => 'Indtast venligst en gyldig e-mailadresse.' ) );
+    }
+
+    // Always return success to prevent email enumeration
+    $success_msg = array( 'message' => 'Loginlink sendt! Tjek din e-mail.' );
+
+    $user = get_user_by( 'email', $email );
+    if ( ! $user ) {
+        wp_send_json_success( $success_msg );
+    }
+
+    // Generate a 32-char secure token, store its hash as a transient (15 min)
+    $token      = wp_generate_password( 32, false );
+    $token_hash = wp_hash( $token );
+    set_transient( 'mybasics_ml_' . $user->ID, $token_hash, 15 * MINUTE_IN_SECONDS );
+
+    // Build the magic link URL
+    $magic_url = add_query_arg(
+        array(
+            'mybasics_ml' => '1',
+            'uid'         => $user->ID,
+            'token'       => $token,
+        ),
+        wc_get_page_permalink( 'myaccount' )
+    );
+
+    // Build the email
+    $options  = get_option( 'mybasics_settings' );
+    $subject  = ! empty( $options['magic_link_email_subject'] )
+        ? $options['magic_link_email_subject']
+        : 'Dit loginlink til ' . get_bloginfo( 'name' );
+
+    $body_template = ! empty( $options['magic_link_email_body'] )
+        ? $options['magic_link_email_body']
+        : "Hej,\n\nKlik p\xc3\xa5 linket herunder for at logge ind:\n\n{link}\n\nLinket er gyldigt i 15 minutter og kan kun bruges \xc3\xa9n gang.\n\nMed venlig hilsen\n" . get_bloginfo( 'name' );
+
+    $body = str_replace( '{link}', esc_url( $magic_url ), $body_template );
+
+    wp_mail( $email, $subject, $body );
+
+    wp_send_json_success( $success_msg );
+}
+
+/**
+ * Handle magic link token in the URL: validate, log in, redirect.
+ * Runs at priority 2 — before the checkout gate (default 10) and after logout (1).
+ */
+add_action( 'template_redirect', function () {
+    if ( empty( $_GET['mybasics_ml'] ) || empty( $_GET['uid'] ) || empty( $_GET['token'] ) ) {
+        return;
+    }
+
+    $uid   = absint( $_GET['uid'] );
+    $token = sanitize_text_field( wp_unslash( $_GET['token'] ) );
+
+    if ( ! $uid || empty( $token ) ) {
+        return;
+    }
+
+    // Already logged in — just redirect to account
+    if ( is_user_logged_in() ) {
+        wp_safe_redirect( wc_get_page_permalink( 'myaccount' ) );
+        exit;
+    }
+
+    $stored_hash = get_transient( 'mybasics_ml_' . $uid );
+
+    if ( ! $stored_hash || ! hash_equals( $stored_hash, wp_hash( $token ) ) ) {
+        // Invalid or expired — redirect to login with a notice
+        wp_safe_redirect( add_query_arg( 'magic_link_error', '1', wc_get_page_permalink( 'myaccount' ) ) );
+        exit;
+    }
+
+    $user = get_user_by( 'ID', $uid );
+    if ( ! $user ) {
+        wp_safe_redirect( wc_get_page_permalink( 'myaccount' ) );
+        exit;
+    }
+
+    // Consume the token (single use)
+    delete_transient( 'mybasics_ml_' . $uid );
+
+    // Log the user in
+    wp_set_auth_cookie( $uid, true );
+    do_action( 'wp_login', $user->user_login, $user );
+
+    wp_safe_redirect( wc_get_page_permalink( 'myaccount' ) );
+    exit;
+}, 2 );
+
+/**
+ * Show an error notice when a magic link is invalid or expired.
+ */
+add_action( 'woocommerce_before_customer_login_form', function () {
+    if ( ! empty( $_GET['magic_link_error'] ) ) {
+        echo '<div class="woocommerce-error" style="display:block!important;margin-bottom:16px;">'
+           . esc_html__( 'Loginlinket er ugyldigt eller udl\xc3\xb8bet. Bed venligst om et nyt.', 'mybasics-magic-login' )
+           . '</div>';
+    }
+}, 20 );
