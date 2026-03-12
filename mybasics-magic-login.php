@@ -1,0 +1,432 @@
+<?php
+/**
+ * Plugin Name: MyBasics Magic Link Login
+ * Description: Passwordless magic-link login for WooCommerce. Based on mybasics-custom-login. Work in progress – staging only.
+ * Version: 0.1.0
+ * Author: Ahmed & Jesper
+ * Text Domain: mybasics-magic-login
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+  exit;
+}
+
+// Include Settings Page
+require_once plugin_dir_path( __FILE__ ) . 'includes/admin-settings.php';
+
+/**
+ * Enqueue CSS + JS
+ */
+add_action( 'wp_enqueue_scripts', function () {
+  if ( function_exists( 'is_account_page' ) && ( is_account_page() || is_wc_endpoint_url() ) ) {
+    wp_enqueue_style(
+      'mybasics-google-fonts',
+      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+      [],
+      null
+    );
+
+    wp_enqueue_style(
+      'mybasics-magic-login-style',
+      plugin_dir_url( __FILE__ ) . 'mybasics-magic-login.css',
+      [],
+      file_exists( plugin_dir_path( __FILE__ ) . 'mybasics-magic-login.css' )
+        ? filemtime( plugin_dir_path( __FILE__ ) . 'mybasics-magic-login.css' )
+        : '0.1.0'
+    );
+
+    wp_enqueue_script(
+      'mybasics-magic-login-script',
+      plugin_dir_url( __FILE__ ) . 'mybasics-magic-login.js',
+      [],
+      file_exists( plugin_dir_path( __FILE__ ) . 'mybasics-magic-login.js' )
+        ? filemtime( plugin_dir_path( __FILE__ ) . 'mybasics-magic-login.js' )
+        : '0.1.0',
+      true
+    );
+    
+    // Retrieve options for JS
+    $options = get_option( 'mybasics_settings' );
+    $texts = array(
+        'loginTitle' => isset($options['auth_login_title']) && !empty($options['auth_login_title']) ? $options['auth_login_title'] : 'Log ind',
+        'registerTitle' => isset($options['auth_register_title']) && !empty($options['auth_register_title']) ? $options['auth_register_title'] : 'Bliv medlem',
+        'loginSubtitle' => isset($options['auth_login_subtitle']) && !empty($options['auth_login_subtitle']) ? $options['auth_login_subtitle'] : 'Få adgang til dine størrelser, dine produkter og din købshistorik – og bestil endnu hurtigere!',
+        'registerSubtitle' => isset($options['auth_register_subtitle']) && !empty($options['auth_register_subtitle']) ? $options['auth_register_subtitle'] : 'Opret din konto og få adgang til din størrelse, dine produkter og din købshistorik. Du kan også bruge dine point til at prøve spændende nye produkter!',
+        'registerPerk' => isset($options['auth_register_perk']) && !empty($options['auth_register_perk']) ? $options['auth_register_perk'] : 'Du får 5 point for din tilmelding.',
+    );
+
+    // Pass security nonce to JavaScript
+    wp_localize_script( 'mybasics-magic-login-script', 'mybasicsLoginData', array(
+      'nonce' => wp_create_nonce( 'mybasics_form_switch' ),
+      'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+      'texts' => $texts
+    ));
+  }
+});
+
+/**
+ * Add preconnect for Google Fonts (Performance optimization)
+ */
+add_action( 'wp_head', function() {
+  if ( function_exists( 'is_account_page' ) && ( is_account_page() || is_wc_endpoint_url() ) ) {
+    echo '<link rel="preconnect" href="https://fonts.googleapis.com">';
+    echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
+  }
+}, 1 );
+
+/**
+ * 🔹 Registration Logic: Email-only, auto-generated username + password (modified for user-set password)
+ */
+
+// Always enable registration on My Account page
+add_filter( 'pre_option_woocommerce_enable_myaccount_registration', function() {
+  return 'yes';
+}, 9999 );
+
+// Force Woo to generate username from email
+add_filter( 'pre_option_woocommerce_registration_generate_username', function() {
+  return 'yes';
+}, 9999 );
+
+// *** IMPORTANT CHANGE: DO NOT FORCE WOO TO GENERATE PASSWORD ***
+// We will allow the user to set their own password directly on the form.
+// We remove the filter that forces woocommerce_registration_generate_password to 'yes'.
+// The default behavior for 'woocommerce_registration_generate_password' if left unchecked in settings is 'no',
+// which means WooCommerce will look for a 'password' field in the $_POST data.
+// If your WooCommerce settings are explicitly set to "Automatically generate a password",
+// you might need to actively unset that option or use `return 'no';` here.
+// For robust control, we will explicitly set it to 'no'.
+add_filter( 'pre_option_woocommerce_registration_generate_password', function() {
+  return 'no';
+}, 9999 );
+
+
+// Ensure "Customer New Account" email is always enabled (still useful, but password link won't be in it)
+add_filter( 'woocommerce_email_enabled_customer_new_account', '__return_true', 9999 );
+
+// Redirect after register - go to checkout if coming from checkout gate
+add_filter( 'woocommerce_registration_redirect', function( $redirect ) {
+  $options = get_option( 'mybasics_settings' );
+  $enable_gate = isset($options['enable_checkout_gate']) ? $options['enable_checkout_gate'] : '1';
+  
+  if ( ! $enable_gate ) {
+      return $redirect;
+  }
+
+  // Check if user came from checkout gate (via referrer or session)
+  $referer = wp_get_referer();
+  if ( $referer && strpos( $referer, 'checkout=1' ) !== false ) {
+    return wc_get_checkout_url();
+  }
+  
+  // Also check if the current request has checkout parameter
+  if ( isset( $_POST['_wp_http_referer'] ) && strpos( sanitize_text_field( wp_unslash( $_POST['_wp_http_referer'] ) ), 'checkout=1' ) !== false ) {
+    return wc_get_checkout_url();
+  }
+  
+  // Default: redirect to my account
+  return wc_get_page_permalink( 'myaccount' );
+});
+
+// Redirect after login - go to checkout if coming from checkout gate
+add_filter( 'woocommerce_login_redirect', function( $redirect, $user ) {
+  $options = get_option( 'mybasics_settings' );
+  $enable_gate = isset($options['enable_checkout_gate']) ? $options['enable_checkout_gate'] : '1';
+  
+  if ( ! $enable_gate ) {
+      return $redirect;
+  }
+
+  // Check if user came from checkout gate (via referrer)
+  $referer = wp_get_referer();
+  if ( $referer && strpos( $referer, 'checkout=1' ) !== false ) {
+    return wc_get_checkout_url();
+  }
+  
+  // Also check if the current request has checkout parameter in the referrer
+  if ( isset( $_POST['_wp_http_referer'] ) && strpos( sanitize_text_field( wp_unslash( $_POST['_wp_http_referer'] ) ), 'checkout=1' ) !== false ) {
+    return wc_get_checkout_url();
+  }
+  
+  // Default behavior
+  return $redirect;
+}, 10, 2 );
+
+// Ensure username is set from email before customer creation
+add_filter( 'woocommerce_new_customer_data', function( $customer_data ) {
+  // If username is empty, generate from email
+  if ( empty( $customer_data['user_login'] ) && ! empty( $customer_data['user_email'] ) ) {
+    $parts = explode( '@', $customer_data['user_email'] );
+    $base  = sanitize_user( $parts[0], true );
+
+    if ( empty( $base ) ) {
+      $base = 'user';
+    }
+
+    // Find available username
+    $candidate = $base;
+    $counter   = 1;
+    while ( username_exists( $candidate ) ) {
+      $candidate = $base . $counter;
+      $counter++;
+    }
+
+    $customer_data['user_login'] = $candidate;
+  }
+
+  // If a password is provided in the POST data, WooCommerce will use it.
+  // We don't need to explicitly add it here if the form field name is 'password'.
+  return $customer_data;
+}, 10, 1 );
+
+// Add server-side validation for the new password field during registration
+add_filter( 'woocommerce_registration_errors', function( $errors, $username, $email ) {
+    if ( isset( $_POST['register'] ) ) { // Only apply for registration submissions
+        // Check for duplicate email with specific error code
+    if ( email_exists( $email ) ) {
+      $errors->add( 'duplicate_email', mybasics_get_option( 'error_duplicate_email', 'Denne e-mailadresse er allerede registreret.' ) );
+        }
+        
+        // Sanitize password input, keeping in mind that passwords can contain special characters
+        // wp_unslash removes slashes added by PHP magic quotes or similar mechanisms
+        $password = isset( $_POST['password'] ) ? trim( wp_unslash( $_POST['password'] ) ) : '';
+        $password_confirm = isset( $_POST['password_confirm'] ) ? trim( wp_unslash( $_POST['password_confirm'] ) ) : '';
+
+        if ( empty( $password ) ) {
+      $errors->add( 'password_empty', mybasics_get_option( 'error_password_empty', 'Indtast venligst en adgangskode.' ) );
+        } elseif ( strlen( $password ) < 6 ) {
+      $errors->add( 'password_length', mybasics_get_option( 'error_password_length', 'Adgangskoden skal være på mindst 6 tegn.' ) );
+        }
+
+        if ( $password !== $password_confirm ) {
+      $errors->add( 'password_mismatch', mybasics_get_option( 'error_password_mismatch', 'Adgangskoderne stemmer ikke overens.' ) );
+        }
+    }
+    return $errors;
+}, 10, 3 );
+
+
+/**
+ * Validate registration nonce server-side
+ */
+add_action( 'woocommerce_process_registration_errors', function( $errors, $username, $email ) {
+  if ( ! isset( $_POST['woocommerce-register-nonce'] ) ||
+       ! wp_verify_nonce( $_POST['woocommerce-register-nonce'], 'woocommerce-register' ) ) {
+  $errors->add( 'nonce_error', mybasics_get_option( 'error_nonce', 'Sikkerhedstjek mislykkedes. Prøv venligst igen.' ) );
+  }
+  return $errors;
+}, 10, 3 );
+
+/**
+ * Detect registration errors and set a flag to show registration form
+ */
+add_action( 'woocommerce_before_customer_login_form', function() {
+  // Check if we have registration errors
+  if ( ! empty( $_POST['register'] ) ) {
+    // Store flag in session to indicate we're on registration form with timestamp
+    WC()->session->set( 'show_registration_form', true );
+    WC()->session->set( 'show_registration_form_timestamp', time() );
+  }
+  
+  // Check if we should show the registration form (with errors)
+  $show_registration = WC()->session->get( 'show_registration_form', false );
+  $timestamp = WC()->session->get( 'show_registration_form_timestamp', 0 );
+  
+  // Clean up old session flags (older than 5 minutes)
+  if ( $timestamp && ( time() - $timestamp ) > 300 ) {
+    WC()->session->set( 'show_registration_form', false );
+    WC()->session->set( 'show_registration_form_timestamp', null );
+    $show_registration = false;
+  }
+  
+  if ( $show_registration ) {
+    // Pass this to JavaScript
+    echo '<script>var showRegistrationForm = true;</script>';
+    // Clear the flag
+    WC()->session->set( 'show_registration_form', false );
+    WC()->session->set( 'show_registration_form_timestamp', null );
+  }
+});
+
+/**
+ * 1. Redirect Guest Users away from Checkout if not logged in
+ */
+add_action('template_redirect', function() {
+    $options = get_option( 'mybasics_settings' );
+    $enable_gate = isset($options['enable_checkout_gate']) ? $options['enable_checkout_gate'] : '1';
+    
+    // If gate is disabled, do nothing
+    if ( ! $enable_gate ) {
+        return;
+    }
+
+    // Only run on checkout page, if user is logged out, and hasn't clicked "Guest"
+    // Update: Also check that we are not processing a form submission (POST) and not on the order-recieved/pay endpoints
+    if ( is_checkout() && ! is_user_logged_in() && ! isset( $_GET['guest'] ) && ! defined( 'DOING_AJAX' ) 
+         && ! is_wc_endpoint_url( 'order-received' ) 
+         && ! is_wc_endpoint_url( 'order-pay' ) 
+         && empty( $_POST ) ) {
+        wp_safe_redirect( add_query_arg( 'checkout', '1', wc_get_page_permalink( 'myaccount' ) ) );
+        exit;
+    }
+});
+
+/**
+ * 2. Inject the "Guest Checkout" column 
+ */
+add_action('woocommerce_before_customer_login_form', function() {
+    $options = get_option( 'mybasics_settings' );
+    $enable_gate = isset($options['enable_checkout_gate']) ? $options['enable_checkout_gate'] : '1';
+    
+    // We check for 'checkout' OR if the user is currently seeing registration errors 
+    // while trying to check out.
+    // AND if the gate is enabled
+    if ($enable_gate && isset($_GET['checkout'])) : 
+        $title = isset($options['guest_checkout_title']) ? $options['guest_checkout_title'] : 'Gæste-checkout';
+        $subtitle = isset($options['guest_checkout_subtitle']) ? $options['guest_checkout_subtitle'] : 'Du kan oprette en konto, når du tjekker ud.';
+        $button_text = isset($options['guest_button_text']) ? $options['guest_button_text'] : 'FORTSÆT SOM GÆST';
+        
+        $benefit1 = isset($options['guest_benefit_1']) && !empty($options['guest_benefit_1']) ? $options['guest_benefit_1'] : 'Hurtigere og nemmere checkout';
+        $benefit2 = isset($options['guest_benefit_2']) && !empty($options['guest_benefit_2']) ? $options['guest_benefit_2'] : 'Ingen oprettelse nødvendig';
+        $benefit3 = isset($options['guest_benefit_3']) && !empty($options['guest_benefit_3']) ? $options['guest_benefit_3'] : 'Gem dine oplysninger til sidst';
+    ?>
+        <script>document.documentElement.classList.add('checkout-gate-page');document.body.classList.add('checkout-gate-page');</script>
+        <div class="checkout-gate-wrapper">
+            <div class="guest-column">
+                <h2 class="title"><?php echo esc_html( $title ); ?></h2>
+                <p class="subtitle"><?php echo nl2br( esc_html( $subtitle ) ); ?></p>
+                
+                <div class="guest-benefits">
+                    <div class="guest-benefit"><?php echo esc_html( $benefit1 ); ?></div>
+                    <div class="guest-benefit"><?php echo esc_html( $benefit2 ); ?></div>
+                    <div class="guest-benefit"><?php echo esc_html( $benefit3 ); ?></div>
+                </div>
+                
+                <a href="<?php echo add_query_arg('guest', '1', wc_get_checkout_url()); ?>" class="guest-btn">
+                    <?php echo esc_html( $button_text ); ?>
+                </a>
+            </div>
+            
+            <div class="form-separator"><span><?php echo esc_html( mybasics_get_option( 'or_separator', 'ELLER' ) ); ?></span></div>
+            
+            <div class="login-column">
+                <!-- Points indicator container for external plugins -->
+                <div class="points-indicator-container"></div>
+                
+                <!-- The existing Login Card will be inside this column -->
+    <?php endif;
+}, 5);
+
+add_action('woocommerce_after_customer_login_form', function() {
+    $options = get_option( 'mybasics_settings' );
+    $enable_gate = isset($options['enable_checkout_gate']) ? $options['enable_checkout_gate'] : '1';
+    
+    if ($enable_gate && isset($_GET['checkout'])) {
+        echo '</div></div>'; // Close .login-column and .checkout-gate-wrapper
+    }
+}, 20);
+
+/**
+ * Validate login nonce server-side
+ */
+add_action( 'authenticate', function( $user, $username, $password ) {
+  if ( isset( $_POST['woocommerce-login-nonce'] ) ) {
+    if ( ! wp_verify_nonce( $_POST['woocommerce-login-nonce'], 'woocommerce-login' ) ) {
+  return new WP_Error( 'nonce_error', mybasics_get_option( 'error_security', 'Sikkerhedstjek mislykkedes.' ) );
+    }
+  }
+  return $user;
+}, 30, 3 );
+
+/**
+ * Fix logout functionality by redirecting the default WooCommerce logout endpoint
+ * to a URL with a proper nonce.
+ */
+add_action( 'template_redirect', function() {
+  if ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'customer-logout' ) ) {
+    // Directly log the user out to avoid showing wp-login.php
+    if ( is_user_logged_in() ) {
+      wp_logout();
+    }
+
+    // Clean WooCommerce session just in case
+    if ( function_exists( 'WC' ) && WC()->session ) {
+      try { WC()->session->destroy_session(); } catch ( \Throwable $e ) {}
+    }
+
+    // Redirect back to the My Account page (your custom login card)
+    $redirect = wc_get_page_permalink( 'myaccount' );
+    wp_safe_redirect( $redirect );
+    exit;
+  }
+}, 1 );
+
+/**
+ * 3. Conversion Tracking Logic
+ */
+add_action( 'woocommerce_thankyou', function( $order_id ) {
+    if ( ! $order_id ) return;
+
+    // Check if tracking is enabled
+    $options = get_option( 'mybasics_settings' );
+    $tracking_enabled = isset($options['enable_conversion_tracking']) && $options['enable_conversion_tracking'] === '1';
+
+    if ( ! $tracking_enabled ) return;
+
+    // Check if this order was already tracked to avoid duplicates on refresh
+    if ( get_post_meta( $order_id, '_mybasics_conversion_tracked', true ) ) {
+        return;
+    }
+
+    $order = wc_get_order( $order_id );
+    if ( ! $order ) return;
+
+    $stats = get_option( 'mybasics_conversion_stats', array(
+        'guest_orders' => 0,
+        'member_orders' => 0,
+        'last_reset' => current_time( 'mysql' )
+    ));
+
+    // Determine if guest or member
+    // "Member" means user was logged in OR they registered during checkout
+    // Ideally we check if user_id is set on the order
+    
+    $user_id = $order->get_user_id();
+    
+    if ( $user_id > 0 ) {
+        $stats['member_orders']++;
+    } else {
+        $stats['guest_orders']++;
+    }
+
+    update_option( 'mybasics_conversion_stats', $stats );
+    update_post_meta( $order_id, '_mybasics_conversion_tracked', 'yes' );
+} );
+
+/**
+ * 🚀 KLAVIYO INTEGRATION: Send MyBasics members to Klaviyo ved oprettelse
+ */
+add_action( 'woocommerce_created_customer', 'mybasics_sync_to_klaviyo_on_registration', 10, 3 );
+
+function mybasics_sync_to_klaviyo_on_registration( $customer_id, $new_customer_data, $password_generated ) {
+    $api_key = mybasics_get_option( 'klaviyo_api_key', '' );
+    if ( empty( $api_key ) ) return;
+
+    $email = $new_customer_data['user_email'];
+
+    $data = array(
+        'token' => $api_key,
+        'properties' => array(
+            '$email' => $email,
+            'Source' => 'MyBasics Registration',
+            'MyBasicsMember' => true
+        )
+    );
+
+    wp_remote_post( 'https://a.klaviyo.com/api/identify', array(
+        'method'    => 'POST',
+        'body'      => array( 'data' => json_encode($data) ),
+        'timeout'   => 5,
+        'blocking'  => false,
+    ));
+}

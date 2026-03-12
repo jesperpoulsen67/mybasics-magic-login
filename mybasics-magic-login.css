@@ -1,0 +1,1580 @@
+/* ===== Design Tokens ===== */
+:root {
+  --brand-600: #2c4cff;
+  --brand-500: #3f67ff;
+  --brand-400: #6f8bff;
+  --ink-900: #0b1220;
+  --ink-700: #1f2a44;
+  --ink-500: #445170;
+  --ink-300: #8a95ad;
+  --ink-200: #c4ccda;
+  --bg-100: #f7f8fb;
+  --white: #ffffff;
+
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+
+  --shadow-lg: 0 20px 50px rgba(9, 25, 55, 0.25);
+  --shadow-md: 0 10px 30px rgba(9, 25, 55, 0.18);
+  --focus: 0 0 0 3px rgba(11, 18, 32, 0.15);
+}
+
+/* ===== Base ===== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  background: #ffffff;
+  color: var(--ink-900);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.4;
+}
+
+/* White background for checkout gate page */
+body:has(.checkout-gate-wrapper),
+html:has(.checkout-gate-wrapper),
+html.checkout-gate-page,
+body.checkout-gate-page {
+  background: #ffffff !important;
+}
+
+/* Register page: Add margin under confirm password field */
+#register-form .field:has(#reg_password_confirm) {
+  margin-bottom: 8px;
+}
+
+/* Register page: Add margin under password hint */
+#reg-pw-hint {
+  margin-bottom: 8px;
+}
+
+/* Helper class to hide hint on login view (toggled by JS) */
+.is-hidden-mode {
+  display: none !important;
+}
+
+a {
+  color: var(--ink-900);
+  text-decoration: underline;
+  font-weight: 600;
+}
+a:hover {
+  opacity: 0.8;
+}
+
+/* ===== Layout ===== */
+.hero {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  padding: 24px;
+  padding-top: 125px; /* Push card down to avoid blocking background */
+  overflow: hidden;
+  contain: layout style paint;
+}
+
+/* Hide background when checkout gate wrapper is present */
+body:has(.checkout-gate-wrapper) .hero::before {
+  display: none !important;
+}
+
+/* Alternative: When checkout query param is present, remove hero background */
+.hero:has(.checkout-gate-wrapper)::before {
+  display: none !important;
+}
+
+/* Reduce hero top padding when checkout gate is present */
+body:has(.checkout-gate-wrapper) .hero,
+.hero:has(.checkout-gate-wrapper) {
+  padding: 0;
+  background: #ffffff !important;
+  min-height: auto;
+  height: auto;
+}
+
+/* Hide the product images in login card header when in checkout gate */
+.checkout-gate-wrapper .login-column header img,
+.checkout-gate-wrapper .login-column .perk,
+.checkout-gate-wrapper .login-column header .logo-images {
+  display: none !important;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url(assets/TredjeIterationBaggrundsbillede.webp)
+    center / contain no-repeat;
+  background-position: center -17px;
+  will-change: transform;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Overlay removed to show original image */
+  pointer-events: none;
+}
+
+/* ===== Modal Card ===== */
+.card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 430px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-lg);
+  box-shadow: none; /* Removed shadow as requested */
+  border: 1px solid #e0e0e0; /* Minimal modern border */
+  padding: 28px 40px; /* Increased side padding to reduce field width */
+  animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.card header {
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--ink-900);
+}
+.subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: black;
+}
+
+.perk {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  margin: 8px auto 18px auto;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: var(--ink-700);
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid var(--ink-200);
+  text-align: center;
+}
+.perk .dot {
+  width: 10px;
+  height: 10px;
+  background: var(--ink-700);
+  border-radius: 999px;
+}
+
+/* ===== Form ===== */
+form {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  position: relative;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 50px; /* More rounded borders */
+  border: 1px solid var(--ink-200);
+  background: var(--white);
+  color: var(--ink-900);
+  font-size: 16px;
+  transition: box-shadow 150ms, background 150ms;
+  padding-right: 44px; /* space for reveal button */
+}
+
+/* Chrome/Safari Autofill Override: Force white background to match label mask */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover, 
+.input:-webkit-autofill:focus, 
+.input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 100px var(--white) inset !important;
+  -webkit-text-fill-color: var(--ink-900) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Floating Labels (Desktop Only) */
+@media (min-width: 1024px) {
+  .field {
+    position: relative;
+    padding-top: 0; /* Removing top padding since label is absolute */
+  }
+
+  /* Target the label to look like a placeholder */
+  .field .field-label,
+  .field label {
+    position: absolute;
+    /* FIX: Use fixed pixel value (approx half input height) instead of 50% 
+       to prevent Hints/Tips inside the field from pushing the label down. */
+    top: 21px; 
+    left: 16px; /* Default left position (no icon) */
+    transform: translateY(-50%);
+    margin: 0;
+    padding: 0 4px;
+    background: transparent;
+    color: #555555; /* Adjusted placeholder color */
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.4; /* increased line height to prevent clipping of descenders */
+    pointer-events: none; /* Let clicks pass through to input */
+    transition: all 0.2s ease-in-out;
+    z-index: 10;
+    width: auto;
+    max-width: calc(100% - 60px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Adjust left position if icon is present */
+  .field:has(.input-icon-container) .field-label,
+  .field:has(.input-icon-container) label,
+  .field:has(.has-icon) .field-label,
+  .field:has(.has-icon) label {
+    left: 40px; /* Tighter to the icon */
+    max-width: calc(100% - 56px); /* 40px Left + 16px Right Buffer */
+  }
+
+  /* Reserve extra space on right ONLY if there is a reveal button (passwords) */
+  .field:has(.reveal-btn) .field-label,
+  .field:has(.reveal-btn) label {
+    max-width: calc(100% - 60px); /* 16px Left + 44px Right Button */
+  }
+
+  .field:has(.input-icon-container):has(.reveal-btn) .field-label,
+  .field:has(.input-icon-container):has(.reveal-btn) label {
+    max-width: calc(100% - 84px); /* 40px Left + 44px Right Button */
+  }
+
+  /* Hide the actual placeholder text globally in this scope */
+  .field input::placeholder,
+  .input::placeholder,
+  #login-form input::placeholder,
+  #register-form input::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
+    -webkit-text-fill-color: transparent !important; /* Force for WebKit */
+  }
+
+  /* Active State: Focus or Has Content */
+  .field:focus-within .field-label,
+  .field:focus-within label,
+  .field:has(input:not(:placeholder-shown)) .field-label, 
+  .field:has(input:not(:placeholder-shown)) label {
+    top: 0; /* Move to top border */
+    left: 20px; /* Standardize left position when floating */
+    transform: translateY(-50%);
+    font-size: 14px; /* Slightly bigger (requested) */
+    font-weight: 600;
+    color: #062348; /* Dark Blue (Brand Color) */
+    background: #ffffff; /* Mask the border */
+    border-radius: 4px;
+    z-index: 20;
+  }
+  
+  /* Ensure input keeps its height/padding */
+  .input {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+}
+
+.input:focus {
+  outline: none;
+}
+
+/* Darker icon color on focus */
+.input-wrapper:focus-within .input-icon-container svg {
+  stroke: #333333 !important;
+  transition: stroke 150ms ease;
+}
+
+.input.invalid {
+  border-color: #e5484d;
+  background: #fff5f5;
+  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.12);
+}
+
+/* Password toggle button: keep neutral, no hover color */
+.reveal-btn {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-500);
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent; /* Remove blue tap box on mobile */
+  outline: none; /* Prevent focus outline on click */
+}
+
+.reveal-btn:hover,
+.reveal-btn:focus {
+  color: var(--ink-500); /* no color change */
+  background: transparent;
+  box-shadow: none; /* keep focus ring off if you prefer; or keep your :focus-visible */
+}
+
+.reveal-btn:focus-visible {
+  /* keep accessibility focus if desired */
+  box-shadow: var(--focus);
+}
+
+.reveal-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* ===== Form Errors & Hints (Fixed Specificity) ===== */
+.hint,
+#login-form .error,
+#register-form .error {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.hint {
+  color: var(--ink-500);
+}
+
+/* Error messages with higher specificity for both forms */
+#login-form .error,
+#register-form .error {
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  color: #be123c;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: slideDown 200ms ease-out;
+}
+
+/* Show errors when they have content */
+#login-form .error:not(:empty),
+#register-form .error:not(:empty) {
+  display: flex;
+}
+
+/* Error icons for both forms */
+#login-form .error::before,
+#register-form .error::before {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23be123c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='12'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Caps lock warning (specific styling) */
+#caps {
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  color: #c2410c;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: slideDown 200ms ease-out;
+}
+
+#caps:not(:empty) {
+  display: flex;
+}
+
+#caps::before {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c2410c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3Cpath d='M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.btn-primary.shake {
+  animation: shake 300ms ease-in-out;
+}
+
+.field .hint {
+  margin-top: 6px;
+}
+
+#login-form .field .error + .hint,
+#register-form .field .error + .hint {
+  margin-top: 8px;
+}
+
+/* Focus state improvements for invalid inputs */
+.input.invalid:focus {
+  border-color: #e5484d;
+  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.18);
+  background: #ffffff;
+}
+
+/* Smooth transitions */
+.input {
+  transition: border-color 150ms ease, background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+/* Remember switch and links row */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* Hide Remember Me switch (forced on by JS) */
+.switch {
+  display: none !important;
+}
+
+.switch input {
+  appearance: none;
+  width: 42px;
+  height: 24px;
+  background: #d7dcea;
+  border-radius: 999px;
+  position: relative;
+  outline: none;
+  transition: background 160ms ease;
+}
+
+.switch input:checked {
+  background: var(--ink-700);
+}
+
+.switch input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--white);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(9, 25, 55, 0.2);
+  transition: transform 160ms ease;
+}
+.switch input:checked::after {
+  transform: translateX(18px);
+}
+
+/* Buttons */
+.btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 80ms ease, box-shadow 150ms ease;
+}
+
+.btn-primary {
+  width: 100%;
+  background: #062348;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 16px;
+  box-shadow: none;
+  transition: background 120ms ease, opacity 120ms ease;
+}
+
+.btn-primary:hover {
+  background: #062348;
+  opacity: 0.95;
+  transform: none;
+  box-shadow: none;
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.membership-offer {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.membership-link {
+  color: var(--ink-900);
+  text-decoration: underline;
+  font-weight: 600;
+  font-size: 16px;
+}
+.membership-link:hover {
+  opacity: 0.8;
+}
+
+/* Mobile tweaks */
+@media (max-width: 520px) {
+  .hero {
+    padding-top: 10px; /* Reduce top padding on mobile to bring card higher */
+  }
+
+  .hero::before {
+    display: none; /* Remove background image on mobile */
+  }
+
+  .card {
+    padding: 20px 16px; /* Tighter on mobile */
+    margin: 12px; /* Add breathing room */
+    max-width: calc(100vw - 24px); /* Prevent overflow */
+  }
+
+  .input {
+    font-size: 16px; /* Prevent iOS zoom */
+    padding: 12px 14px;
+  }
+
+  .btn-primary {
+    padding: 16px; /* Larger touch target */
+    font-size: 17px;
+    min-height: 50px; /* Ensure minimum touch target */
+  }
+
+  .field-label {
+    font-size: 13px; /* Slightly smaller labels */
+  }
+
+  .error {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+}
+
+/* iPad portrait mode (820x1180 aspect ratio) */
+@media (max-width: 830px) and (min-height: 1100px) and (orientation: portrait) {
+  .hero::before {
+    background-size: cover;
+    background-position: center -17px;
+  }
+  
+  .hero {
+    padding-top: 80px;
+  }
+}
+
+/* FINAL: Hard override for inline style injection */
+#login-form .field .input-wrapper {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+#login-form input#password {
+  display: block !important;
+}
+
+/* Hide perk badge for logged-out users */
+body.logged-out .perk {
+  display: none !important;
+}
+
+/* Forgot password link size */
+#forgot-link {
+  font-size: 15px;
+  line-height: 1.3;
+  color: #000000; /* Black color */
+  text-decoration: underline;
+  display: block; /* Ensure it takes full width if needed for positioning */
+  text-align: center; /* Center align under button */
+  margin-top: 10px;
+}
+
+.mybasics-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+    max-width: 900px;
+    align-items: center;
+}
+
+.login-card, .register-card {
+    width: 100%;
+    max-width: 430px;
+}
+
+@media (min-width: 800px) {
+    .mybasics-container {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: center;
+    }
+}
+
+/* Form view management */
+.auth-forms {
+  position: relative;
+}
+.auth-view.is-hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
+}
+.auth-view.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+/* Hide WooCommerce's default inline error messages */
+.woocommerce-form-login .woocommerce-error,
+.woocommerce-form-login .woocommerce-message,
+.woocommerce-form-login .woocommerce-info,
+.woocommerce-form-register .woocommerce-error,
+.woocommerce-form-register .woocommerce-message,
+.woocommerce-form-register .woocommerce-info,
+ul.woocommerce-error,
+.woocommerce-error {
+  display: none !important;
+}
+
+/* Hide WooCommerce default form row errors */
+.woocommerce-form-login .woocommerce-form-row .woocommerce-error,
+.woocommerce-form-register .woocommerce-form-row .woocommerce-error {
+  display: none !important;
+}
+
+/* Hide any default validation messages that appear inline */
+.woocommerce-form__input-checkbox + .required,
+.woocommerce-form-login .required,
+.woocommerce-form-register .required {
+  display: none !important; /* Hide the asterisk */
+}
+
+/* But hide any inline error text WooCommerce adds */
+.woocommerce-form-login .inline,
+.woocommerce-form-register .inline {
+  display: none !important;
+}
+#login-form label.error,
+#register-form label.error {
+  display: none !important;
+}
+/* Specifically target and hide the unwanted auto-generated div */
+.input-wrapper > .error-message {
+  display: none !important;
+}
+.woocommerce-message {
+  display: none !important;
+}
+
+/* Loading state for buttons */
+.btn-primary.is-loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.btn-primary.is-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin: -8px 0 0 -8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== Form Spacing Adjustments ===== */
+
+/* Login page: Add margin above the login button (space from "Husk mig" toggle) */
+#login-form .btn-primary {
+  margin-top: 20px;
+}
+
+/* Login page: More space between field labels and inputs */
+#login-form label[for="username"],
+#login-form label[for="password"] {
+  margin-bottom: 4px;
+}
+
+/* Login page: More space between email and password fields */
+#login-form .field:has(#password) {
+  margin-top: 24px;
+}
+
+/* Register page: More space between field labels and inputs */
+#register-form label[for="reg_email"],
+#register-form label[for="reg_password"],
+#register-form label[for="reg_password_confirm"] {
+  margin-bottom: 4px;
+}
+
+/* Register page: More space between email and password fields */
+#register-form .field:has(#reg_password) {
+  margin-top: 24px;
+}
+
+/* Register page: Add margin above the register button (space from paragraph above) */
+#register-form .btn-primary {
+  margin-top: 20px;
+}
+
+/* Adjust card positioning for login and registration forms */
+.auth-forms:has(#login-form.is-visible) .card {
+  margin-top: 15px;
+}
+
+.auth-forms:has(#register-form.is-visible) .card {
+  margin-top: 60px;
+}
+
+.membership-pitch-title {
+  margin: 0 0 6px 0 !important; /* Reduced margin */
+  font-weight: 700;
+  font-size: 15px;
+  color: #111; /* Darker color */
+  line-height: 1.2;
+}
+
+.membership-pitch-description {
+  margin: 0 0 10px 0; /* Adjusted margins */
+  max-width: 340px; /* Constrain line length for readability */
+  margin-left: 0; /* Align left */
+  margin-right: auto;
+  text-align: left;
+  font-size: 13px; /* ~30% smaller than standard 15/16px */
+  line-height: 1.4;
+}
+
+.membership-offer {
+  margin-top: 12px; /* Reduced top margin */
+  text-align: left; /* Left align button/link */
+  padding-left: 20px; /* Align with form fields roughly if needed, or keeping it flush? User said left align. */
+}
+
+/* mybasics-custom-login.css */
+
+.is-hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none; /* Prevents interaction with hidden elements */
+}
+
+.is-visible {
+  display: block !important; /* Or flex, depending on your layout */
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto;
+}
+
+/* ===== Password Strength: Clean, Fixed Placement ===== */
+/* Hide WooCommerce's default moving parts in our custom form */
+#register-form .woocommerce-password-strength,
+#register-form .woocommerce-password-hint {
+  display: none !important;
+}
+
+/* Our fixed container under the password field */
+#register-form .strength-ui {
+  margin-top: 10px;
+}
+
+#register-form .strength-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: #eaedf3; /* subtle track */
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#register-form .strength-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: #e5484d; /* default weak */
+  border-radius: 999px;
+  transition: width 180ms ease, background-color 180ms ease;
+}
+
+#register-form .strength-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+/* Map strength levels to width + color */
+#register-form .strength-ui[data-strength="0"] .strength-bar-fill {
+  width: 20%;
+  background: #ef4444; /* red */
+}
+#register-form .strength-ui[data-strength="1"] .strength-bar-fill {
+  width: 45%;
+  background: #f59e0b; /* amber */
+}
+#register-form .strength-ui[data-strength="2"] .strength-bar-fill {
+  width: 75%;
+  background: var(--brand-500); /* brand */
+}
+#register-form .strength-ui[data-strength="3"] .strength-bar-fill {
+  width: 100%;
+  background: #10b981; /* green */
+}
+
+/* Compact on mobile */
+@media (max-width: 520px) {
+  #register-form .strength-bar { height: 7px; }
+  #register-form .strength-label { font-size: 11px; }
+}
+
+/* ===== Duplicate Email Modal ===== */
+.duplicate-email-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  padding: 20px;
+  display: block;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 200ms ease, visibility 200ms ease;
+}
+
+.duplicate-email-modal.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.duplicate-email-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 18, 32, 0.7);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 200ms ease;
+}
+
+.duplicate-email-modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 480px;
+  width: min(100%, 480px);
+  padding: 32px 28px 28px;
+  animation: modalSlideIn 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.duplicate-email-modal-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 20px;
+  background: #fef3c7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b;
+}
+
+.duplicate-email-modal-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.duplicate-email-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin: 0 0 12px;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.duplicate-email-modal-message {
+  font-size: 15px;
+  color: var(--ink-500);
+  line-height: 1.6;
+  margin: 0 0 24px;
+  text-align: center;
+}
+
+.duplicate-email-modal-email {
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.duplicate-email-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.duplicate-email-modal-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 120ms ease, transform 80ms ease;
+  text-decoration: none;
+}
+
+.duplicate-email-modal-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.duplicate-email-modal-btn:active {
+  transform: translateY(0);
+}
+
+.duplicate-email-modal-btn-primary {
+  background: #062348;
+  color: var(--white);
+}
+
+.duplicate-email-modal-btn-secondary {
+  background: var(--bg-100);
+  color: var(--ink-900);
+  border: 1px solid var(--ink-200);
+}
+
+.duplicate-email-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--ink-300);
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.duplicate-email-modal-close:hover {
+  background: var(--bg-100);
+  color: var(--ink-700);
+}
+
+.duplicate-email-modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0) scale(1);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 520px) {
+  .duplicate-email-modal-content {
+    padding: 24px 20px 20px;
+    max-width: calc(100vw - 32px);
+  }
+
+  .duplicate-email-modal-title {
+    font-size: 18px;
+  }
+
+  .duplicate-email-modal-message {
+    font-size: 14px;
+  }
+
+  .duplicate-email-modal-btn {
+    padding: 16px;
+    font-size: 16px;
+  }
+}
+
+/* Container for the split view */
+.birkenstock-gate-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 60px;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.gate-column {
+    flex: 1;
+    max-width: 450px;
+}
+
+.gate-divider {
+    width: 1px;
+    background: #e0e0e0;
+}
+
+.btn-guest-checkout {
+    display: block;
+    width: 100%;
+    background: #111; /* Birkenstock black */
+    color: #fff;
+    padding: 16px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 4px;
+    margin-top: 20px;
+    transition: background 0.2s;
+}
+
+.btn-guest-checkout:hover {
+    background: #333;
+}
+
+/* Responsive: Stack them on mobile */
+@media (max-width: 768px) {
+    .birkenstock-gate-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .gate-divider {
+        height: 1px;
+        width: 100%;
+    }
+}
+
+/* ===== Checkout Gate Wrapper - Clean Layout ===== */
+.checkout-gate-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding: 40px 20px;
+    max-width: 100%;
+    position: relative;
+    z-index: 3;
+}
+
+/* Force white background on hero when checkout gate is present */
+.hero:has(.checkout-gate-wrapper),
+.hero > .checkout-gate-wrapper {
+    background: #ffffff !important;
+}
+
+.hero > .checkout-gate-wrapper ~ * {
+    background: transparent;
+}
+
+/* Guest Column - Clean Layout (no card) */
+.guest-column {
+    text-align: left;
+    max-width: 400px;
+    width: 100%;
+}
+
+.guest-column .title {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink-900);
+    margin-bottom: 16px;
+    margin-top: 0;
+}
+
+/* Match login column title margin to guest column */
+.checkout-gate-wrapper .login-column .title {
+    margin-bottom: 16px;
+}
+
+.guest-column .title::before {
+    display: none;
+}
+
+.guest-column .subtitle {
+    color: var(--ink-700);
+    line-height: 1.6;
+    margin-bottom: 24px;
+    font-size: 15px;
+}
+
+/* Guest checkout benefits list */
+.guest-benefits {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0 0 28px 0;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    text-align: left;
+}
+
+.guest-benefit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: var(--ink-700);
+}
+
+.guest-benefit::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23062348' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 11.08V12a10 10 0 1 1-5.93-9.14'/%3E%3Cpolyline points='22 4 12 14.01 9 11.01'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+}
+
+/* Guest Checkout Button */
+.guest-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #062348;
+    color: #ffffff !important;
+    text-decoration: none;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    transition: all 200ms ease;
+}
+
+.guest-btn::after {
+    content: "→";
+    font-size: 18px;
+    transition: transform 200ms ease;
+}
+
+.guest-btn:hover {
+    background: #0a3460;
+    opacity: 1;
+}
+
+.guest-btn:hover::after {
+    transform: translateX(4px);
+}
+
+/* Form Separator - Vertical Line */
+.form-separator {
+    display: none;
+}
+
+/* Login Column - Keep Card but remove background decorations */
+.login-column {
+    max-width: 430px;
+    width: 100%;
+}
+
+/* Widen login modal on checkout gate for shorter height */
+.checkout-gate-wrapper .login-column {
+    max-width: 900px;
+}
+
+/* Points indicator container - minimal styling to allow external plugins to control spacing */
+.points-indicator-container {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Ensure child elements are inline */
+.points-indicator-container > * {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Adjust SVG icon alignment */
+.points-indicator-container svg {
+    transform: translateY(2px);
+}
+
+/* Empty state - no height when empty */
+.points-indicator-container:empty {
+    display: none;
+}
+
+/* Box styling for points indicator on all devices */
+.checkout-gate-wrapper .points-indicator-container:not(:empty) {
+    background: #f7f8fb;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--ink-200);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* On desktop: Position points indicator absolutely above both column headings */
+@media (min-width: 850px) {
+    .checkout-gate-wrapper .points-indicator-container:not(:empty) {
+        position: absolute;
+        top: -70px; /* Position above the login column */
+        left: 22px; /* Match padding-left of login-column */
+        right: 0;
+        margin-bottom: 0;
+    }
+}
+
+.login-column .card {
+    border: 1px solid rgba(6, 35, 72, 0.1);
+    background: #ffffff;
+}
+
+/* Ensure solid white background on checkout gate - no shadows or border */
+.checkout-gate-wrapper .login-column .card {
+    background: #ffffff;
+    box-shadow: none;
+    border: none;
+    backdrop-filter: none;
+    will-change: auto;
+    animation: none;
+    transform: none;
+}
+
+/* Center align the heading in checkout gate */
+.checkout-gate-wrapper .login-column .title {
+    text-align: center;
+}
+
+/* Hide the logo/images in login card when in checkout gate */
+.checkout-gate-wrapper .login-column .card header img,
+.checkout-gate-wrapper .login-column .card .perk {
+    display: none;
+}
+
+@media (min-width: 850px) {
+    .checkout-gate-wrapper {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 0;
+        max-width: 950px;
+        margin: 0 auto;
+        padding: 60px 40px;
+    }
+    
+    .guest-column {
+        flex: 1;
+        max-width: 380px;
+        padding-right: 78px; /* 50px gap + 28px to match card padding */
+        border-right: 1px solid var(--ink-200);
+        min-height: 350px;
+    }
+    
+    .login-column {
+        flex: 1;
+        max-width: 430px;
+        padding-left: 22px; /* 50px gap - 28px card padding = 22px */
+        position: relative; /* For absolute positioning of points container */
+    }
+    
+    /* Align both titles at the same height */
+    .guest-column > .title,
+    .login-column .card .title {
+        margin-top: 0;
+        padding-top: 0;
+    }
+    
+    .login-column .card {
+        padding-top: 0;
+    }
+    
+    .form-separator {
+        display: none;
+    }
+    
+    /* Increase checkout gate heading sizes for desktop only */
+    .checkout-gate-wrapper .guest-column .title {
+        font-size: 36.4px; /* 28px * 1.3 = 36.4px */
+    }
+    
+    .checkout-gate-wrapper .guest-column .subtitle {
+        font-size: 16px;
+    }
+    
+    .checkout-gate-wrapper .login-column .title {
+        font-size: 36.4px; /* 28px * 1.3 = 36.4px */
+    }
+    
+    .checkout-gate-wrapper .login-column .subtitle {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 849px) {
+    .checkout-gate-wrapper {
+        padding: 24px 16px;
+        gap: 32px;
+    }
+    
+    .guest-column,
+    .login-column {
+        width: 100%;
+        max-width: 430px;
+    }
+    
+    .guest-column {
+        padding-bottom: 0;
+    }
+    
+    /* Remove card padding on mobile for equal spacing */
+    .checkout-gate-wrapper .login-column .card {
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* Hide guest benefits and subtitle on mobile */
+    .guest-benefits,
+    .guest-column .subtitle {
+        display: none;
+    }
+    
+    /* Show separator with ODER text on mobile */
+    .form-separator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        gap: 16px;
+        margin: 16px 0;
+    }
+    
+    .form-separator::before,
+    .form-separator::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--ink-200);
+    }
+    
+    .form-separator span {
+        color: var(--ink-500);
+        font-weight: 600;
+        font-size: 13px;
+    }
+}
+
+
+/* ===== Mobile Optimization: Wide Modal & Better Vertical Space ===== */
+@media (max-width: 600px) {
+  .hero {
+    /* Reduce large top padding to fit content on screen */
+    padding-top: 5px;
+    /* Reduce side padding for wider modal */
+    padding-left: 10px;
+    padding-right: 10px;
+    /* Allow height to grow if content is long */
+    height: auto;
+    min-height: 100dvh;
+    /* Ensure content starts at top */
+    justify-content: flex-start;
+    /* Use block or flex column layout for safer mobile stacking if grid behaves oddly */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card {
+    /* Maximize width use */
+    width: 100%;
+    max-width: 100%;
+    /* Reduce internal padding for less compressed look space-wise */
+    padding: 24px 20px;
+    /* Add some margin at bottom to ensure spacing from footer text if any */
+    margin-bottom: 24px;
+  }
+
+  /* Ensure the text beneath isn't too far or too close */
+  .membership-pitch,
+  .membership-toggle {
+    width: 100%;
+    text-align: center;
+    padding: 0 10px;
+  }
+
+  .field-label {
+    color: #000000 !important;
+    font-size: 16px !important;
+  }
+}
+
+/* User requested border removal (Global) */
+#login-form,
+#register-form,
+.woocommerce-form-login,
+.woocommerce-form-register {
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Icons for input fields (Global) */
+.input-wrapper.has-icon {
+  position: relative;
+}
+
+.input-icon-container {
+  position: absolute;
+  left: 16px; /* Shifted right slightly for rounded borders */
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.input-wrapper.has-icon input.input {
+  padding-left: 48px !important; /* Adjusted padding */
+}
+
+/* 🚀 DEFINITIVT FIX MOD STOP-SKILT */
+#submit-register, #submit-login, .woocommerce-form-register__submit, .woocommerce-form-login__submit {
+    cursor: pointer !important;
+}
+#submit-register:disabled, #submit-login:disabled, .woocommerce-form-register__submit:disabled, .woocommerce-form-login__submit:disabled {
+    cursor: pointer !important;
+    opacity: 1 !important;
+}
