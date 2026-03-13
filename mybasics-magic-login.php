@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MyBasics Magic Link Login
  * Description: Passwordless magic-link login for WooCommerce. Based on mybasics-custom-login. Work in progress – staging only.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: Ahmed & Jesper
  * Text Domain: mybasics-magic-login
  */

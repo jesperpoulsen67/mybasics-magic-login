@@ -1282,29 +1282,32 @@ function handleLoginForm() {
 //   OLD  — single .card with toggled views (checkout gate)
 // =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-  const data = window.mybasicsLoginData;
-  if (!data || !data.magicLinkEnabled) return;
+  const data          = window.mybasicsLoginData;
+  const magicEnabled  = data && data.magicLinkEnabled;
 
   const magicLinkForm = document.getElementById('magic-link-form');
-  if (!magicLinkForm) return;
-
-  const loginForm    = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
-  const mlRequest    = document.getElementById('magic-link-request');
-  const mlSuccess    = document.getElementById('magic-link-success');
-  const mlEmailInput = document.getElementById('magic-link-email');
-  const mlSubmitBtn  = document.getElementById('magic-link-submit');
-  const mlErrorEl    = document.getElementById('magic-link-error');
+  const loginForm     = document.getElementById('login-form');
+  const registerForm  = document.getElementById('register-form');
+  const mlRequest     = document.getElementById('magic-link-request');
+  const mlSuccess     = document.getElementById('magic-link-success');
+  const mlEmailInput  = document.getElementById('magic-link-email');
+  const mlSubmitBtn   = document.getElementById('magic-link-submit');
+  const mlErrorEl     = document.getElementById('magic-link-error');
 
   const newLayout = document.querySelector('.mb-login-wrapper');
 
+  // Two-column layout setup runs regardless of magic link setting
   if (newLayout) {
     setupNewLayout();
-  } else {
+  } else if (magicEnabled && magicLinkForm) {
+    // Old single-card layout only needs setup if magic link is active
     setupOldLayout();
   }
 
-  setupMagicLinkAjax();
+  // AJAX submission only if magic link is enabled and form exists
+  if (magicEnabled && magicLinkForm) {
+    setupMagicLinkAjax();
+  }
 
   // Helper: show or hide an element using is-visible / is-hidden classes
   function setVisible(el, show) {
@@ -1373,11 +1376,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Set initial visibility: magic link shown, login + register hidden.
     //    Use inline style.display as well as aria/class — inline styles beat
     //    any CSS class set by the first DOMContentLoaded listener (toggleForms).
-    function showEl(el)  { if (!el) return; el.style.display = ''; setVisible(el, true); }
-    function hideEl(el)  { if (!el) return; el.style.display = 'none'; setVisible(el, false); }
+    function showEl(el)  { if (!el) return; el.style.display = 'block'; setVisible(el, true); }
+    function hideEl(el)  { if (!el) return; el.style.display = 'none';  setVisible(el, false); }
 
-    showEl(magicLinkForm);
-    hideEl(loginForm);
+    if (magicLinkForm) {
+      // Magic link is enabled: show it by default, hide password login
+      showEl(magicLinkForm);
+      hideEl(loginForm);
+    } else {
+      // Magic link disabled: show password login directly
+      showEl(loginForm);
+    }
     hideEl(registerForm);
 
     // 5. Reset magic-link form to request state
