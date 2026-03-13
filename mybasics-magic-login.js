@@ -1373,37 +1373,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Remove now-empty WooCommerce wrapper
     if (customerLogin) customerLogin.remove();
 
-    // 4. Set initial visibility: magic link shown, login + register hidden.
-    //    Use inline style.display as well as aria/class — inline styles beat
-    //    any CSS class set by the first DOMContentLoaded listener (toggleForms).
-    function showEl(el)  { if (!el) return; el.style.display = 'block'; setVisible(el, true); }
-    function hideEl(el)  { if (!el) return; el.style.display = 'none';  setVisible(el, false); }
-
-    if (magicLinkForm) {
-      // Magic link is enabled: show it by default, hide password login
-      showEl(magicLinkForm);
-      hideEl(loginForm);
-    } else {
-      // Magic link disabled: show password login directly
-      showEl(loginForm);
+    // 4. CSS (injected by PHP) already hides #login-form and shows #magic-link-form
+    //    by default inside .mb-col-left. JS only needs to toggle .mb-show-password
+    //    on body to switch views. aria-hidden is kept in sync for accessibility.
+    function showPasswordView() {
+      document.body.classList.add('mb-show-password');
+      if (loginForm)    loginForm.setAttribute('aria-hidden', 'false');
+      if (magicLinkForm) magicLinkForm.setAttribute('aria-hidden', 'true');
+      const firstInput = loginForm && loginForm.querySelector('input:not([type=hidden])');
+      if (firstInput) setTimeout(() => firstInput.focus(), 50);
     }
-    hideEl(registerForm);
+    function showMagicView() {
+      document.body.classList.remove('mb-show-password');
+      if (magicLinkForm) magicLinkForm.setAttribute('aria-hidden', 'false');
+      if (loginForm)    loginForm.setAttribute('aria-hidden', 'true');
+      resetMagicLinkForm();
+    }
 
-    // 5. Reset magic-link form to request state
-    resetMagicLinkForm();
+    // If magic link is disabled (form not in DOM), reveal password login via body class
+    if (!magicLinkForm) {
+      document.body.classList.add('mb-show-password');
+    }
+
+    // 5. Register form hidden by default
+    if (registerForm) { registerForm.setAttribute('aria-hidden', 'true'); }
 
     // 6. If #register hash or server-side registration errors, reveal register form
     const showRegisterInit = window.showRegistrationForm || window.location.hash === '#register';
     if (showRegisterInit && showRegisterBtn && registerForm) {
       showRegisterBtn.style.display = 'none';
-      showEl(registerForm);
+      registerForm.style.display = 'block';
+      registerForm.setAttribute('aria-hidden', 'false');
     }
 
     // 7. "Tilmeld mig & Shop nu" — reveal register form
     if (showRegisterBtn && registerForm) {
       showRegisterBtn.addEventListener('click', () => {
         showRegisterBtn.style.display = 'none';
-        showEl(registerForm);
+        registerForm.style.display = 'block';
+        registerForm.setAttribute('aria-hidden', 'false');
         const firstInput = registerForm.querySelector('input:not([type=hidden])');
         if (firstInput) setTimeout(() => firstInput.focus(), 50);
       });
@@ -1414,10 +1422,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const anchor = e.target.closest('.mb-use-password-link');
       if (!anchor) return;
       e.preventDefault();
-      hideEl(magicLinkForm);
-      showEl(loginForm);
-      const firstInput = loginForm && loginForm.querySelector('input:not([type=hidden])');
-      if (firstInput) setTimeout(() => firstInput.focus(), 50);
+      showPasswordView();
     });
 
     // 9. Back link inside magic-link form — return to magic link view
@@ -1425,9 +1430,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const anchor = e.target.closest('#magic-link-form .magic-link-back');
       if (!anchor) return;
       e.preventDefault();
-      hideEl(loginForm);
-      showEl(magicLinkForm);
-      resetMagicLinkForm();
+      showMagicView();
     });
   }
 

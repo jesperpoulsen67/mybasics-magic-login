@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MyBasics Magic Link Login
  * Description: Passwordless magic-link login for WooCommerce. Based on mybasics-custom-login. Work in progress – staging only.
- * Version: 0.2.0
+ * Version: 0.2.1
  * Author: Ahmed & Jesper
  * Text Domain: mybasics-magic-login
  */
@@ -469,6 +469,16 @@ add_action( 'woocommerce_before_customer_login_form', function () {
     $icon_url  = get_site_icon_url( 512 );
     $site_name = esc_attr( get_bloginfo( 'name' ) );
     ?>
+    <style>
+    /* ── New layout default state ──────────────────────────────────────────
+       Hide password login immediately (before JS runs).
+       JS adds .mb-show-password to body to reveal it when user requests it.
+       ─────────────────────────────────────────────────────────────────── */
+    .mb-col-left #login-form                         { display: none  !important; }
+    .mb-col-left #magic-link-form                    { display: block !important; }
+    .mb-show-password .mb-col-left #login-form       { display: block !important; }
+    .mb-show-password .mb-col-left #magic-link-form  { display: none  !important; }
+    </style>
     <div class="mb-login-wrapper">
 
       <div class="mb-col mb-col-left">
