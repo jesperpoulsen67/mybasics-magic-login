@@ -1370,10 +1370,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Remove now-empty WooCommerce wrapper
     if (customerLogin) customerLogin.remove();
 
-    // 4. Set initial visibility: magic link shown, login + register hidden
-    setVisible(magicLinkForm, true);
-    setVisible(loginForm, false);
-    setVisible(registerForm, false);
+    // 4. Set initial visibility: magic link shown, login + register hidden.
+    //    Use inline style.display as well as aria/class — inline styles beat
+    //    any CSS class set by the first DOMContentLoaded listener (toggleForms).
+    function showEl(el)  { if (!el) return; el.style.display = ''; setVisible(el, true); }
+    function hideEl(el)  { if (!el) return; el.style.display = 'none'; setVisible(el, false); }
+
+    showEl(magicLinkForm);
+    hideEl(loginForm);
+    hideEl(registerForm);
 
     // 5. Reset magic-link form to request state
     resetMagicLinkForm();
@@ -1382,14 +1387,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const showRegisterInit = window.showRegistrationForm || window.location.hash === '#register';
     if (showRegisterInit && showRegisterBtn && registerForm) {
       showRegisterBtn.style.display = 'none';
-      setVisible(registerForm, true);
+      showEl(registerForm);
     }
 
     // 7. "Tilmeld mig & Shop nu" — reveal register form
     if (showRegisterBtn && registerForm) {
       showRegisterBtn.addEventListener('click', () => {
         showRegisterBtn.style.display = 'none';
-        setVisible(registerForm, true);
+        showEl(registerForm);
         const firstInput = registerForm.querySelector('input:not([type=hidden])');
         if (firstInput) setTimeout(() => firstInput.focus(), 50);
       });
@@ -1400,8 +1405,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const anchor = e.target.closest('.mb-use-password-link');
       if (!anchor) return;
       e.preventDefault();
-      setVisible(magicLinkForm, false);
-      setVisible(loginForm, true);
+      hideEl(magicLinkForm);
+      showEl(loginForm);
       const firstInput = loginForm && loginForm.querySelector('input:not([type=hidden])');
       if (firstInput) setTimeout(() => firstInput.focus(), 50);
     });
@@ -1411,8 +1416,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const anchor = e.target.closest('#magic-link-form .magic-link-back');
       if (!anchor) return;
       e.preventDefault();
-      setVisible(loginForm, false);
-      setVisible(magicLinkForm, true);
+      hideEl(loginForm);
+      showEl(magicLinkForm);
       resetMagicLinkForm();
     });
   }
