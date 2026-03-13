@@ -1579,11 +1579,20 @@ ul.woocommerce-error,
     opacity: 1 !important;
 }
 
-/* ===== Magic Link Form ===== */
+/* ===== Magic Link Form + login/register visibility in new layout ===== */
 #magic-link-form.is-hidden {
   display: none !important;
 }
 #magic-link-form.is-visible {
+  display: block !important;
+}
+/* Hide/show login and register forms via JS setVisible() in new layout */
+.mb-login-wrapper #login-form.is-hidden,
+.mb-login-wrapper #register-form.is-hidden {
+  display: none !important;
+}
+.mb-login-wrapper #login-form.is-visible,
+.mb-login-wrapper #register-form.is-visible {
   display: block !important;
 }
 
