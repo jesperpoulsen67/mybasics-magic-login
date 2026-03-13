@@ -466,8 +466,7 @@ function mybasics_benefit_icon( $type ) {
 add_action( 'woocommerce_before_customer_login_form', function () {
     if ( mybasics_is_checkout_gate() ) return;
 
-    $logo_id   = get_theme_mod( 'custom_logo' );
-    $logo_url  = $logo_id ? wp_get_attachment_image_url( $logo_id, 'full' ) : '';
+    $icon_url  = get_site_icon_url( 512 );
     $site_name = esc_attr( get_bloginfo( 'name' ) );
     ?>
     <div class="mb-login-wrapper">
@@ -476,11 +475,11 @@ add_action( 'woocommerce_before_customer_login_form', function () {
 
         <h2 class="mb-col-title">Allerede MyBasics Medlem?</h2>
 
-        <?php if ( $logo_url ) : ?>
+        <?php if ( $icon_url ) : ?>
         <div class="mb-logo-area">
-          <img src="<?php echo esc_url( $logo_url ); ?>"
+          <img src="<?php echo esc_url( $icon_url ); ?>"
                alt="<?php echo $site_name; ?>"
-               class="mb-logo" />
+               class="mb-logo mb-site-icon" />
         </div>
         <?php endif; ?>
 
@@ -516,8 +515,7 @@ add_action( 'woocommerce_before_customer_login_form', function () {
 add_action( 'woocommerce_after_customer_login_form', function () {
     if ( mybasics_is_checkout_gate() ) return;
 
-    $logo_id   = get_theme_mod( 'custom_logo' );
-    $logo_url  = $logo_id ? wp_get_attachment_image_url( $logo_id, 'full' ) : '';
+    $icon_url  = get_site_icon_url( 512 );
     $site_name = esc_attr( get_bloginfo( 'name' ) );
 
     $benefits = [
@@ -535,11 +533,11 @@ add_action( 'woocommerce_after_customer_login_form', function () {
 
         <h2 class="mb-col-title">Ikke MyBasics Medlem endnu?</h2>
 
-        <?php if ( $logo_url ) : ?>
+        <?php if ( $icon_url ) : ?>
         <div class="mb-logo-area mb-logo-area-right">
-          <img src="<?php echo esc_url( $logo_url ); ?>"
+          <img src="<?php echo esc_url( $icon_url ); ?>"
                alt="<?php echo $site_name; ?>"
-               class="mb-logo" />
+               class="mb-logo mb-site-icon" />
           <span class="mb-plus" aria-hidden="true">+</span>
           <svg class="mb-coin-icon" xmlns="http://www.w3.org/2000/svg"
                viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">

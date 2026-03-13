@@ -1330,7 +1330,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const showRegisterBtn = document.getElementById('mb-show-register');
     const customerLogin   = document.getElementById('customer_login');
 
-    // 0. Hide theme card header and membership elements
+    // 0a. Add body class so CSS can target things without relying on :has()
+    document.documentElement.classList.add('mb-new-layout');
+    document.body.classList.add('mb-new-layout');
+
+    // 0b. Hide theme card header and membership elements
     //    (CSS :has() handles modern browsers; this is the JS fallback for older ones)
     const outerCard = newLayout.closest('.card');
     if (outerCard) {

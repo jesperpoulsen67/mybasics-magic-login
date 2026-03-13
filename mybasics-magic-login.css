@@ -1631,17 +1631,40 @@ ul.woocommerce-error,
    Shown on the standard my-account page (non-gate).
    =================================================== */
 
-/* Hide hero background image and reset padding for new layout */
-.hero:has(.mb-login-wrapper)::before {
+/* Hide hero background image and reset padding for new layout.
+   :has() for modern browsers; .mb-new-layout (added by JS) as fallback. */
+.hero:has(.mb-login-wrapper)::before,
+.mb-new-layout .hero::before {
   display: none !important;
 }
-.hero:has(.mb-login-wrapper) {
+.hero:has(.mb-login-wrapper),
+.mb-new-layout .hero {
   padding-top: 48px;
   padding-left: 16px;
   padding-right: 16px;
   background: #f3f4f6 !important;
   min-height: 100dvh;
   align-items: start;
+}
+
+/* Neutralise card chrome (JS fallback via .mb-new-layout body class) */
+.mb-new-layout .card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  animation: none !important;
+}
+.mb-new-layout .card > header,
+.mb-new-layout .card .perk,
+.mb-new-layout .card .membership-pitch,
+.mb-new-layout .card .membership-toggle,
+.mb-new-layout .card .membership-offer {
+  display: none !important;
 }
 
 /* Outer wrapper — two columns side by side */
@@ -1706,6 +1729,13 @@ ul.woocommerce-error,
   max-height: 52px;
   max-width: 100%;
   display: block;
+}
+/* Site icon is square — constrain by width and add rounded corners */
+.mb-site-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: contain;
 }
 
 /* Plus sign between logo and coin */
