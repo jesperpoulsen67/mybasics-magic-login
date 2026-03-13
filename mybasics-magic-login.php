@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MyBasics Magic Link Login
  * Description: Passwordless magic-link login for WooCommerce. Based on mybasics-custom-login. Work in progress – staging only.
- * Version: 0.2.1
+ * Version: 0.2.3
  * Author: Ahmed & Jesper
  * Text Domain: mybasics-magic-login
  */
@@ -470,14 +470,8 @@ add_action( 'woocommerce_before_customer_login_form', function () {
     $site_name = esc_attr( get_bloginfo( 'name' ) );
     ?>
     <style>
-    /* ── New layout default state ──────────────────────────────────────────
-       Hide password login immediately (before JS runs).
-       JS adds .mb-show-password to body to reveal it when user requests it.
-       ─────────────────────────────────────────────────────────────────── */
-    .mb-col-left #login-form                         { display: none  !important; }
-    .mb-col-left #magic-link-form                    { display: block !important; }
-    .mb-show-password .mb-col-left #login-form       { display: block !important; }
-    .mb-show-password .mb-col-left #magic-link-form  { display: none  !important; }
+    /* Hide WooCommerce password login form by default in new layout */
+    .mb-col-left .woocommerce-form-login { display: none !important; }
     </style>
     <div class="mb-login-wrapper">
 
@@ -517,6 +511,23 @@ add_action( 'woocommerce_before_customer_login_form', function () {
     // NOTE: .mb-col-left is intentionally left OPEN here.
     //       It is closed by the woocommerce_after_customer_login_form hook at priority 3.
 }, 3 );
+
+/**
+ * Add "use password" link inside left column, after the WooCommerce forms.
+ * Priority 2 = fires before priority 3 which closes .mb-col-left.
+ */
+add_action( 'woocommerce_after_customer_login_form', function () {
+    if ( mybasics_is_checkout_gate() ) return;
+    ?>
+    <p style="text-align:center;margin-top:12px;">
+      <a href="#"
+         class="mb-use-password-link"
+         onclick="this.closest('.mb-col-left').querySelector('.woocommerce-form-login').style.cssText='display:block!important';this.parentNode.style.display='none';return false;">
+        Jeg vil hellere logge ind med adgangskode
+      </a>
+    </p>
+    <?php
+}, 2 );
 
 /**
  * Close left column, render the right (registration) column, close wrapper.

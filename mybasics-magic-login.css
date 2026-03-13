@@ -1549,6 +1549,13 @@ ul.woocommerce-error,
   padding: 0 !important;
 }
 
+/* Override Extra CSS (.woocommerce form) white card inside new layout columns */
+.mb-col-left .woocommerce-form-login,
+.mb-col-right .woocommerce-form-register {
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
 /* Icons for input fields (Global) */
 .input-wrapper.has-icon {
   position: relative;
@@ -1579,20 +1586,11 @@ ul.woocommerce-error,
     opacity: 1 !important;
 }
 
-/* ===== Magic Link Form + login/register visibility in new layout ===== */
+/* ===== Magic Link Form ===== */
 #magic-link-form.is-hidden {
   display: none !important;
 }
 #magic-link-form.is-visible {
-  display: block !important;
-}
-/* Hide/show login and register forms via JS setVisible() in new layout */
-.mb-login-wrapper #login-form.is-hidden,
-.mb-login-wrapper #register-form.is-hidden {
-  display: none !important;
-}
-.mb-login-wrapper #login-form.is-visible,
-.mb-login-wrapper #register-form.is-visible {
   display: block !important;
 }
 
