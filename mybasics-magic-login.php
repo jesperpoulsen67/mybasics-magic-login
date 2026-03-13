@@ -434,6 +434,148 @@ function mybasics_sync_to_klaviyo_on_registration( $customer_id, $new_customer_d
 }
 
 // =============================================================================
+// TWO-COLUMN LOGIN PAGE LAYOUT  (standard my-account page, non-checkout-gate)
+// =============================================================================
+
+/**
+ * Returns true when the checkout gate is active on the current request.
+ */
+function mybasics_is_checkout_gate() {
+    $options     = get_option( 'mybasics_settings' );
+    $enable_gate = isset( $options['enable_checkout_gate'] ) ? $options['enable_checkout_gate'] : '1';
+    return $enable_gate === '1' && isset( $_GET['checkout'] );
+}
+
+/**
+ * Returns an inline SVG icon for a membership benefit.
+ */
+function mybasics_benefit_icon( $type ) {
+    $icons = [
+        'reorder'   => '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>',
+        'ruler'     => '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.3 8.7 8.7 21.3c-.4.4-.8.6-1.3.6s-.9-.2-1.3-.6L2.7 17.9c-.4-.4-.6-.8-.6-1.3s.2-.9.6-1.3L15.3 2.7c.4-.4.8-.6 1.3-.6s.9.2 1.3.6l3.4 3.4c.4.4.6.8.6 1.3s-.2.9-.6 1.3z"/><path d="M7.5 10.5 10 13"/><path d="M10.5 7.5 13 10"/><path d="M13.5 4.5 16 7"/></svg>',
+        'piggybank' => '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h0"/></svg>',
+        'bag'       => '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+    ];
+    return isset( $icons[ $type ] ) ? $icons[ $type ] : '';
+}
+
+/**
+ * Open the two-column wrapper + left column with header content.
+ * Fires before WooCommerce renders the login/register forms.
+ */
+add_action( 'woocommerce_before_customer_login_form', function () {
+    if ( mybasics_is_checkout_gate() ) return;
+
+    $logo_id   = get_theme_mod( 'custom_logo' );
+    $logo_url  = $logo_id ? wp_get_attachment_image_url( $logo_id, 'full' ) : '';
+    $site_name = esc_attr( get_bloginfo( 'name' ) );
+    ?>
+    <div class="mb-login-wrapper">
+
+      <div class="mb-col mb-col-left">
+
+        <h2 class="mb-col-title">Allerede MyBasics Medlem?</h2>
+
+        <?php if ( $logo_url ) : ?>
+        <div class="mb-logo-area">
+          <img src="<?php echo esc_url( $logo_url ); ?>"
+               alt="<?php echo $site_name; ?>"
+               class="mb-logo" />
+        </div>
+        <?php endif; ?>
+
+        <p class="mb-tagline">Slip for at huske dit kodeord&nbsp;&ndash; vi g&oslash;r det nemt.</p>
+
+        <div class="mb-envelope-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 84" width="100" height="84">
+            <!-- Envelope body -->
+            <rect x="2" y="6" width="82" height="60" rx="6" ry="6"
+                  fill="#ddeeff" stroke="#a8c8f0" stroke-width="2"/>
+            <!-- Envelope flap -->
+            <polyline points="2,6 43,44 84,6"
+                      fill="none" stroke="#a8c8f0" stroke-width="2"/>
+            <!-- Chain-link badge (bottom-right) -->
+            <circle cx="78" cy="60" r="20" fill="#ffffff" stroke="#e5e7eb" stroke-width="1.5"/>
+            <path d="M71 60 a7 7 0 0 1 7-7h5a7 7 0 0 1 0 14h-5a7 7 0 0 1-7-7z" fill="none" stroke="#4b7cf3" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M75 60 a7 7 0 0 1 7-7h5a7 7 0 0 1 0 14h-5a7 7 0 0 1-7-7z" fill="none" stroke="#4b7cf3" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <!-- #login-form and #magic-link-form will be moved here by JS -->
+
+      </div><!-- .mb-col-left — left column is NOT closed here; JS inserts forms before closing -->
+
+    <?php
+    // NOTE: .mb-col-left is closed in the after hook below.
+}, 3 );
+
+/**
+ * Close left column, render the right (registration) column, close wrapper.
+ * Fires after WooCommerce renders the login/register forms.
+ */
+add_action( 'woocommerce_after_customer_login_form', function () {
+    if ( mybasics_is_checkout_gate() ) return;
+
+    $logo_id   = get_theme_mod( 'custom_logo' );
+    $logo_url  = $logo_id ? wp_get_attachment_image_url( $logo_id, 'full' ) : '';
+    $site_name = esc_attr( get_bloginfo( 'name' ) );
+
+    $benefits = [
+        [ 'icon' => 'reorder',   'text' => 'Nemt genbestil dine favoritter.' ],
+        [ 'icon' => 'ruler',     'text' => 'Vi husker din præcise størrelse.' ],
+        [ 'icon' => 'piggybank', 'text' => 'Optjen point for hvert køb til gratis varer.' ],
+        [ 'icon' => 'bag',       'text' => 'Se din fulde købshistorik.' ],
+    ];
+    ?>
+      </div><!-- /.mb-col-left (opened by before hook at priority 3) -->
+
+      <div class="mb-col-divider" aria-hidden="true"></div>
+
+      <div class="mb-col mb-col-right">
+
+        <h2 class="mb-col-title">Ikke MyBasics Medlem endnu?</h2>
+
+        <?php if ( $logo_url ) : ?>
+        <div class="mb-logo-area mb-logo-area-right">
+          <img src="<?php echo esc_url( $logo_url ); ?>"
+               alt="<?php echo $site_name; ?>"
+               class="mb-logo" />
+          <span class="mb-plus" aria-hidden="true">+</span>
+          <svg class="mb-coin-icon" xmlns="http://www.w3.org/2000/svg"
+               viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">
+            <circle cx="20" cy="20" r="19" fill="#f5c518" stroke="#c9a100" stroke-width="1.5"/>
+            <text x="20" y="27" text-anchor="middle"
+                  font-family="Georgia,serif" font-size="19"
+                  font-weight="bold" fill="#8a6500">&#9733;</text>
+          </svg>
+        </div>
+        <?php endif; ?>
+
+        <p class="mb-tagline">G&oslash;r dine indk&oslash;b hurtigere og optjen point til gratis produkter.</p>
+
+        <ul class="mb-benefits" aria-label="Fordele ved at blive medlem">
+          <?php foreach ( $benefits as $b ) : ?>
+          <li class="mb-benefit">
+            <span class="mb-benefit-icon"><?php echo mybasics_benefit_icon( $b['icon'] ); ?></span>
+            <span><?php echo esc_html( $b['text'] ); ?></span>
+          </li>
+          <?php endforeach; ?>
+        </ul>
+
+        <!-- CTA — JS moves #register-form here and shows it when this button is clicked -->
+        <button type="button" class="btn btn-primary mb-register-cta" id="mb-show-register">
+          Tilmeld mig &amp; Shop nu
+        </button>
+
+        <!-- #register-form will be moved here by JS -->
+
+      </div><!-- /.mb-col-right -->
+
+    </div><!-- /.mb-login-wrapper -->
+    <?php
+}, 3 );
+
+// =============================================================================
 // MAGIC LINK FEATURE
 // =============================================================================
 
@@ -450,18 +592,26 @@ add_action( 'woocommerce_after_customer_login_form', function () {
     <div id="magic-link-form" class="is-hidden" aria-hidden="true">
         <div id="magic-link-request">
             <div class="field">
-                <label for="magic-link-email" class="field-label">E-mailadresse</label>
+                <label for="magic-link-email" class="field-label mb-sr-only">E-mailadresse</label>
                 <div class="input-wrapper">
-                    <input type="email" id="magic-link-email" class="input" placeholder="din@email.dk" autocomplete="email" />
+                    <input type="email" id="magic-link-email" class="input"
+                           placeholder="Din e-mail adresse"
+                           aria-label="E-mailadresse"
+                           autocomplete="email" />
                 </div>
             </div>
             <div id="magic-link-error" class="error" role="alert" aria-live="polite"></div>
-            <button type="button" id="magic-link-submit" class="btn btn-primary">Send mig et loginlink</button>
+            <button type="button" id="magic-link-submit" class="btn btn-primary">Send mig login-link</button>
+            <div class="mb-use-password-wrap">
+                <a href="#" class="mb-use-password-link">
+                    Jeg vil hellere logge ind med kodeord (hvis du har et)
+                </a>
+            </div>
         </div>
         <div id="magic-link-success" class="is-hidden">
             <p class="magic-link-success-msg">Tjek din e-mail og klik p&aring; loginlinket. Det er gyldigt i 15 minutter.</p>
         </div>
-        <div style="margin-top:16px;text-align:center;">
+        <div class="magic-link-back-wrap" style="margin-top:16px;text-align:center;">
             <a href="#login" class="membership-link magic-link-back">&larr; Tilbage til login</a>
         </div>
     </div>

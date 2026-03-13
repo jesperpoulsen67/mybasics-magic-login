@@ -1276,93 +1276,193 @@ function handleLoginForm() {
 // MAGIC LINK — view toggle + AJAX submission
 // Runs after DOMContentLoaded in its own listener so it has access to the
 // already-rendered WooCommerce forms without touching the existing code above.
+//
+// Supports two layouts:
+//   NEW  — two-column .mb-login-wrapper (standard my-account page)
+//   OLD  — single .card with toggled views (checkout gate)
 // =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
   const data = window.mybasicsLoginData;
   if (!data || !data.magicLinkEnabled) return;
 
-  const magicLinkForm   = document.getElementById('magic-link-form');
+  const magicLinkForm = document.getElementById('magic-link-form');
   if (!magicLinkForm) return;
 
-  const loginForm       = document.getElementById('login-form');
-  const registerForm    = document.getElementById('register-form');
-  const authTitle       = document.getElementById('auth-title');
-  const authSubtitle    = document.querySelector('.card .subtitle');
-  const perkContainer   = document.querySelector('.card .perk');
-  const membershipPitch = document.querySelector('.membership-pitch');
-  const mlRequest       = document.getElementById('magic-link-request');
-  const mlSuccess       = document.getElementById('magic-link-success');
-  const mlEmailInput    = document.getElementById('magic-link-email');
-  const mlSubmitBtn     = document.getElementById('magic-link-submit');
-  const mlErrorEl       = document.getElementById('magic-link-error');
+  const loginForm    = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const mlRequest    = document.getElementById('magic-link-request');
+  const mlSuccess    = document.getElementById('magic-link-success');
+  const mlEmailInput = document.getElementById('magic-link-email');
+  const mlSubmitBtn  = document.getElementById('magic-link-submit');
+  const mlErrorEl    = document.getElementById('magic-link-error');
 
-  // --- Move magic-link-form inside the card so it sits at the right depth ---
-  const card = document.querySelector('.card');
-  if (card) card.appendChild(magicLinkForm);
+  const newLayout = document.querySelector('.mb-login-wrapper');
 
-  // --- Inject "Log ind uden adgangskode" link inside the login form ---
-  if (loginForm) {
-    const loginBtn = loginForm.querySelector('.btn-primary');
-    if (loginBtn) {
-      const toggleWrap = document.createElement('p');
-      toggleWrap.className = 'magic-link-toggle-wrap';
-      toggleWrap.innerHTML = '<a href="#magic-link" class="magic-link-link">Log ind uden adgangskode &rarr;</a>';
-      loginBtn.after(toggleWrap);
-    }
+  if (newLayout) {
+    setupNewLayout();
+  } else {
+    setupOldLayout();
   }
 
-  // --- Show / hide helpers ---
-  function showMagicLinkView() {
-    if (loginForm)    { loginForm.classList.add('is-hidden');    loginForm.classList.remove('is-visible'); }
-    if (registerForm) { registerForm.classList.add('is-hidden'); registerForm.classList.remove('is-visible'); }
+  setupMagicLinkAjax();
 
-    magicLinkForm.classList.remove('is-hidden');
-    magicLinkForm.classList.add('is-visible');
-    magicLinkForm.setAttribute('aria-hidden', 'false');
+  // Helper: show or hide an element using is-visible / is-hidden classes
+  function setVisible(el, show) {
+    if (!el) return;
+    el.classList.toggle('is-visible', show);
+    el.classList.toggle('is-hidden', !show);
+    el.setAttribute('aria-hidden', String(!show));
+  }
 
-    if (authTitle)       authTitle.textContent    = 'Log ind uden adgangskode';
-    if (authSubtitle)    authSubtitle.textContent = 'Indtast din e-mailadresse, s\u00e5 sender vi dig et loginlink.';
-    if (perkContainer)   { perkContainer.classList.add('is-hidden'); perkContainer.innerHTML = ''; }
-    if (membershipPitch) membershipPitch.classList.add('is-hidden');
-
-    // Reset to request state
-    if (mlRequest) { mlRequest.classList.remove('is-hidden'); }
-    if (mlSuccess) { mlSuccess.classList.add('is-hidden'); }
+  // Helper: reset magic link form to initial request state
+  function resetMagicLinkForm() {
+    if (mlRequest) mlRequest.classList.remove('is-hidden');
+    if (mlSuccess) mlSuccess.classList.add('is-hidden');
     if (mlErrorEl) mlErrorEl.textContent = '';
-    if (mlEmailInput) { mlEmailInput.value = ''; setTimeout(() => mlEmailInput.focus(), 50); }
   }
 
-  function hideMagicLinkView() {
-    magicLinkForm.classList.add('is-hidden');
-    magicLinkForm.classList.remove('is-visible');
-    magicLinkForm.setAttribute('aria-hidden', 'true');
-    // Restore login view
-    if (loginForm)    { loginForm.classList.add('is-visible');    loginForm.classList.remove('is-hidden'); }
-    if (registerForm) { registerForm.classList.add('is-hidden');  registerForm.classList.remove('is-visible'); }
-    // Restore title / subtitle via existing texts
-    if (authTitle && data.texts)    authTitle.textContent    = data.texts.loginTitle    || 'Log ind';
-    if (authSubtitle && data.texts) authSubtitle.textContent = data.texts.loginSubtitle || '';
-    if (membershipPitch) membershipPitch.classList.remove('is-hidden');
+  // ---------------------------------------------------------------------------
+  // NEW TWO-COLUMN LAYOUT
+  // ---------------------------------------------------------------------------
+  function setupNewLayout() {
+    const colLeft         = newLayout.querySelector('.mb-col-left');
+    const colRight        = newLayout.querySelector('.mb-col-right');
+    const showRegisterBtn = document.getElementById('mb-show-register');
+    const customerLogin   = document.getElementById('customer_login');
+
+    // 1. Move WooCommerce forms out of their wrapper into the correct columns
+    if (colLeft && loginForm && customerLogin) {
+      colLeft.insertBefore(loginForm, customerLogin);
+    }
+    if (colRight && registerForm && showRegisterBtn) {
+      colRight.insertBefore(registerForm, showRegisterBtn);
+    }
+
+    // 2. Move magic-link-form into left column (before login form)
+    if (colLeft && loginForm) {
+      colLeft.insertBefore(magicLinkForm, loginForm);
+    } else if (colLeft) {
+      colLeft.appendChild(magicLinkForm);
+    }
+
+    // 3. Remove now-empty WooCommerce wrapper
+    if (customerLogin) customerLogin.remove();
+
+    // 4. Set initial visibility: magic link shown, login + register hidden
+    setVisible(magicLinkForm, true);
+    setVisible(loginForm, false);
+    setVisible(registerForm, false);
+
+    // 5. Reset magic-link form to request state
+    resetMagicLinkForm();
+
+    // 6. If #register hash or server-side registration errors, reveal register form
+    const showRegisterInit = window.showRegistrationForm || window.location.hash === '#register';
+    if (showRegisterInit && showRegisterBtn && registerForm) {
+      showRegisterBtn.style.display = 'none';
+      setVisible(registerForm, true);
+    }
+
+    // 7. "Tilmeld mig & Shop nu" — reveal register form
+    if (showRegisterBtn && registerForm) {
+      showRegisterBtn.addEventListener('click', () => {
+        showRegisterBtn.style.display = 'none';
+        setVisible(registerForm, true);
+        const firstInput = registerForm.querySelector('input:not([type=hidden])');
+        if (firstInput) setTimeout(() => firstInput.focus(), 50);
+      });
+    }
+
+    // 8. "Jeg vil hellere logge ind med kodeord" — switch to password login
+    document.addEventListener('click', (e) => {
+      const anchor = e.target.closest('.mb-use-password-link');
+      if (!anchor) return;
+      e.preventDefault();
+      setVisible(magicLinkForm, false);
+      setVisible(loginForm, true);
+      const firstInput = loginForm && loginForm.querySelector('input:not([type=hidden])');
+      if (firstInput) setTimeout(() => firstInput.focus(), 50);
+    });
+
+    // 9. Back link inside magic-link form — return to magic link view
+    document.addEventListener('click', (e) => {
+      const anchor = e.target.closest('#magic-link-form .magic-link-back');
+      if (!anchor) return;
+      e.preventDefault();
+      setVisible(loginForm, false);
+      setVisible(magicLinkForm, true);
+      resetMagicLinkForm();
+    });
   }
 
-  // --- Toggle links pointing to #magic-link ---
-  document.addEventListener('click', (e) => {
-    const anchor = e.target.closest('a[href="#magic-link"]');
-    if (!anchor) return;
-    e.preventDefault();
-    showMagicLinkView();
-  });
+  // ---------------------------------------------------------------------------
+  // OLD SINGLE-CARD LAYOUT  (checkout gate etc.)
+  // ---------------------------------------------------------------------------
+  function setupOldLayout() {
+    const authTitle       = document.getElementById('auth-title');
+    const authSubtitle    = document.querySelector('.card .subtitle');
+    const perkContainer   = document.querySelector('.card .perk');
+    const membershipPitch = document.querySelector('.membership-pitch');
 
-  // --- Back links inside the magic link form ---
-  document.addEventListener('click', (e) => {
-    const anchor = e.target.closest('#magic-link-form a[href="#login"]');
-    if (!anchor) return;
-    e.preventDefault();
-    hideMagicLinkView();
-  });
+    // Move magic-link-form inside the card
+    const card = document.querySelector('.card');
+    if (card) card.appendChild(magicLinkForm);
 
-  // --- AJAX form submission ---
-  if (mlSubmitBtn) {
+    // Inject "Log ind uden adgangskode" link below the login button
+    if (loginForm) {
+      const loginBtn = loginForm.querySelector('.btn-primary');
+      if (loginBtn) {
+        const toggleWrap = document.createElement('p');
+        toggleWrap.className = 'magic-link-toggle-wrap';
+        toggleWrap.innerHTML = '<a href="#magic-link" class="magic-link-link">Log ind uden adgangskode &rarr;</a>';
+        loginBtn.after(toggleWrap);
+      }
+    }
+
+    function showMagicLinkView() {
+      setVisible(loginForm, false);
+      setVisible(registerForm, false);
+      setVisible(magicLinkForm, true);
+
+      if (authTitle)       authTitle.textContent    = 'Log ind uden adgangskode';
+      if (authSubtitle)    authSubtitle.textContent = 'Indtast din e-mailadresse, s\u00e5 sender vi dig et loginlink.';
+      if (perkContainer)   { perkContainer.classList.add('is-hidden'); perkContainer.innerHTML = ''; }
+      if (membershipPitch) membershipPitch.classList.add('is-hidden');
+
+      resetMagicLinkForm();
+      if (mlEmailInput) { mlEmailInput.value = ''; setTimeout(() => mlEmailInput.focus(), 50); }
+    }
+
+    function hideMagicLinkView() {
+      setVisible(magicLinkForm, false);
+      setVisible(loginForm, true);
+      setVisible(registerForm, false);
+      if (authTitle && data.texts)    authTitle.textContent    = data.texts.loginTitle    || 'Log ind';
+      if (authSubtitle && data.texts) authSubtitle.textContent = data.texts.loginSubtitle || '';
+      if (membershipPitch) membershipPitch.classList.remove('is-hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      const anchor = e.target.closest('a[href="#magic-link"]');
+      if (!anchor) return;
+      e.preventDefault();
+      showMagicLinkView();
+    });
+
+    document.addEventListener('click', (e) => {
+      const anchor = e.target.closest('#magic-link-form a[href="#login"]');
+      if (!anchor) return;
+      e.preventDefault();
+      hideMagicLinkView();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared AJAX submission
+  // ---------------------------------------------------------------------------
+  function setupMagicLinkAjax() {
+    if (!mlSubmitBtn) return;
+
     mlSubmitBtn.addEventListener('click', () => {
       const email = mlEmailInput ? mlEmailInput.value.trim() : '';
       if (!email) {
@@ -1398,7 +1498,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Allow pressing Enter in the email field
     if (mlEmailInput) {
       mlEmailInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); mlSubmitBtn.click(); }

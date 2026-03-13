@@ -1625,3 +1625,259 @@ ul.woocommerce-error,
 .magic-link-back {
   font-size: 15px;
 }
+
+/* ===================================================
+   TWO-COLUMN LOGIN PAGE LAYOUT
+   Shown on the standard my-account page (non-gate).
+   =================================================== */
+
+/* Hide hero background image and reset padding for new layout */
+.hero:has(.mb-login-wrapper)::before {
+  display: none !important;
+}
+.hero:has(.mb-login-wrapper) {
+  padding-top: 48px;
+  padding-left: 16px;
+  padding-right: 16px;
+  background: #f3f4f6 !important;
+  min-height: 100dvh;
+  align-items: start;
+}
+
+/* Outer wrapper — two columns side by side */
+.mb-login-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  max-width: 900px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  animation: rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Shared column base */
+.mb-col {
+  flex: 1;
+  padding: 44px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Left column — light gray background */
+.mb-col-left {
+  background: #f5f5f5;
+}
+
+/* Right column — white */
+.mb-col-right {
+  background: #ffffff;
+}
+
+/* Vertical divider between columns */
+.mb-col-divider {
+  width: 1px;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+/* Column heading */
+.mb-col-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0b1220;
+  text-align: center;
+  margin: 0 0 20px;
+  line-height: 1.3;
+}
+
+/* Logo area */
+.mb-logo-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mb-logo {
+  max-height: 52px;
+  max-width: 100%;
+  display: block;
+}
+
+/* Plus sign between logo and coin */
+.mb-plus {
+  font-size: 22px;
+  font-weight: 300;
+  color: #9ca3af;
+  line-height: 1;
+}
+
+/* Coin icon */
+.mb-coin-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Bold tagline */
+.mb-tagline {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0b1220;
+  text-align: center;
+  margin: 0 0 20px;
+  line-height: 1.4;
+}
+
+/* Decorative envelope icon */
+.mb-envelope-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* Forms inside the new layout: remove card styling */
+.mb-col-left  .card,
+.mb-col-right .card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  max-width: 100% !important;
+  animation: none !important;
+  width: 100%;
+}
+
+/* Hide WooCommerce's inner column wrapper and headings */
+.mb-col-left  #customer_login,
+.mb-col-right #customer_login {
+  display: none !important; /* JS moves the forms out; wrapper can be removed */
+}
+
+/* Forms fill the column width */
+.mb-col-left  #login-form,
+.mb-col-left  #magic-link-form,
+.mb-col-right #register-form {
+  width: 100%;
+}
+
+/* Hide floating label in magic link form (uses placeholder instead) */
+.mb-login-wrapper #magic-link-form .field-label,
+.mb-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0,0,0,0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* "Use password" link below magic link button */
+.mb-use-password-wrap {
+  text-align: center;
+  margin-top: 12px;
+}
+.mb-use-password-link {
+  font-size: 13px;
+  font-weight: 400;
+  color: #555;
+  text-decoration: underline;
+}
+.mb-use-password-link:hover {
+  opacity: 0.75;
+}
+
+/* Hide the old-layout back-link when inside new layout (use "use password" link instead) */
+.mb-login-wrapper .magic-link-back-wrap {
+  display: none !important;
+}
+
+/* Benefits list */
+.mb-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mb-benefit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  color: #1f2a44;
+  line-height: 1.4;
+}
+.mb-benefit-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* CTA "Tilmeld mig" button */
+.mb-register-cta {
+  width: 100%;
+  background: #0b1220;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 15px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+  margin-bottom: 0;
+}
+.mb-register-cta:hover {
+  opacity: 0.9;
+}
+
+/* Register form when revealed inside right column */
+.mb-col-right #register-form {
+  margin-top: 20px;
+}
+
+/* Remove top margin from login button in new layout (spacing already handled) */
+.mb-col-left #login-form .btn-primary {
+  margin-top: 12px;
+}
+
+/* ---- Responsive: stack columns on mobile ---- */
+@media (max-width: 720px) {
+  .mb-login-wrapper {
+    flex-direction: column;
+    border-radius: 12px;
+  }
+  .mb-col-divider {
+    width: 100%;
+    height: 1px;
+  }
+  .mb-col {
+    padding: 32px 24px;
+  }
+  .mb-col-title {
+    font-size: 18px;
+  }
+  .mb-tagline {
+    font-size: 15px;
+  }
+  .hero:has(.mb-login-wrapper) {
+    padding-top: 20px;
+  }
+}
