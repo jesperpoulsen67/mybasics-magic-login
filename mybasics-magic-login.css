@@ -1739,9 +1739,8 @@ ul.woocommerce-error,
   margin-bottom: 20px;
 }
 
-/* Forms inside the new layout: remove card styling */
-.mb-col-left  .card,
-.mb-col-right .card {
+/* Neutralise the outer .card that wraps .mb-login-wrapper */
+.card:has(.mb-login-wrapper) {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
@@ -1749,8 +1748,17 @@ ul.woocommerce-error,
   border-radius: 0 !important;
   backdrop-filter: none !important;
   max-width: 100% !important;
+  width: 100% !important;
   animation: none !important;
-  width: 100%;
+}
+
+/* Hide theme card header, perk and membership elements in new layout */
+.card:has(.mb-login-wrapper) > header,
+.card:has(.mb-login-wrapper) .perk,
+.card:has(.mb-login-wrapper) .membership-pitch,
+.card:has(.mb-login-wrapper) .membership-toggle,
+.card:has(.mb-login-wrapper) .membership-offer {
+  display: none !important;
 }
 
 /* Hide WooCommerce's inner column wrapper and headings */
@@ -1778,6 +1786,12 @@ ul.woocommerce-error,
   clip: rect(0,0,0,0) !important;
   white-space: nowrap !important;
   border: 0 !important;
+}
+
+/* Fix floating-label CSS that would otherwise hide the placeholder */
+.mb-login-wrapper #magic-link-email::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
 }
 
 /* "Use password" link below magic link button */

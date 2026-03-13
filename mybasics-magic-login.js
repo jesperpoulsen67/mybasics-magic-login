@@ -1330,6 +1330,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const showRegisterBtn = document.getElementById('mb-show-register');
     const customerLogin   = document.getElementById('customer_login');
 
+    // 0. Hide theme card header and membership elements
+    //    (CSS :has() handles modern browsers; this is the JS fallback for older ones)
+    const outerCard = newLayout.closest('.card');
+    if (outerCard) {
+      const toHide = [
+        outerCard.querySelector(':scope > header'),
+        outerCard.querySelector('.perk'),
+        outerCard.querySelector('.membership-pitch'),
+        outerCard.querySelector('.membership-toggle'),
+        outerCard.querySelector('.membership-offer'),
+      ];
+      toHide.forEach(el => { if (el) el.style.display = 'none'; });
+      // Neutralise card chrome (box-shadow, padding, max-width, background)
+      outerCard.style.cssText += ';background:transparent!important;border:none!important;' +
+        'box-shadow:none!important;padding:0!important;max-width:100%!important;' +
+        'width:100%!important;animation:none!important;border-radius:0!important;';
+    }
+
     // 1. Move WooCommerce forms out of their wrapper into the correct columns
     if (colLeft && loginForm && customerLogin) {
       colLeft.insertBefore(loginForm, customerLogin);

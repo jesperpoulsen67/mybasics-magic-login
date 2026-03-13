@@ -501,12 +501,12 @@ add_action( 'woocommerce_before_customer_login_form', function () {
           </svg>
         </div>
 
-        <!-- #login-form and #magic-link-form will be moved here by JS -->
-
-      </div><!-- .mb-col-left — left column is NOT closed here; JS inserts forms before closing -->
+        <!-- WooCommerce login + register forms render here (inside .mb-col-left).
+             JS moves #register-form to .mb-col-right and #magic-link-form to the top of this column. -->
 
     <?php
-    // NOTE: .mb-col-left is closed in the after hook below.
+    // NOTE: .mb-col-left is intentionally left OPEN here.
+    //       It is closed by the woocommerce_after_customer_login_form hook at priority 3.
 }, 3 );
 
 /**
