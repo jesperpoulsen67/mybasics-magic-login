@@ -1932,3 +1932,22 @@ ul.woocommerce-error,
     padding-top: 20px;
   }
 }
+
+/* =============================================================================
+   VIEW TOGGLE: magic link (default) ↔ password login
+   JS adds body.mb-show-password when user clicks "use password" link,
+   and removes it when user clicks "back to magic link".
+   ============================================================================= */
+
+/* Default: magic link form is the primary view — override its initial is-hidden class */
+body.mb-new-layout .mb-col-left #magic-link-form {
+  display: block !important;
+}
+
+/* Password view: hide magic link form, reveal login form */
+body.mb-new-layout.mb-show-password .mb-col-left #magic-link-form {
+  display: none !important;
+}
+body.mb-new-layout.mb-show-password .mb-col-left .woocommerce-form-login {
+  display: block !important;
+}
