@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // New two-column layout handles everything itself — skip old card code entirely.
+    if (document.querySelector('.mb-login-wrapper')) return;
+
     const loginForm = document.getElementById("login-form");
     const registerForm = document.getElementById("register-form");
 
