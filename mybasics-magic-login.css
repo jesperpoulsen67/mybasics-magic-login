@@ -1939,15 +1939,23 @@ ul.woocommerce-error,
    and removes it when user clicks "back to magic link".
    ============================================================================= */
 
-/* Default: magic link form is the primary view — override its initial is-hidden class */
+/* Default: magic link form is the primary view — override all three .is-hidden properties */
 body.mb-new-layout .mb-col-left #magic-link-form {
   display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* Password view: hide magic link form, reveal login form */
 body.mb-new-layout.mb-show-password .mb-col-left #magic-link-form {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 body.mb-new-layout.mb-show-password .mb-col-left .woocommerce-form-login {
   display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
