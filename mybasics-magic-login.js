@@ -1286,8 +1286,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const magicEnabled  = data && data.magicLinkEnabled;
 
   const magicLinkForm = document.getElementById('magic-link-form');
-  const loginForm     = document.getElementById('login-form');
-  const registerForm  = document.getElementById('register-form');
+  const loginForm     = document.getElementById('login-form')     || document.querySelector('.woocommerce-form-login');
+  const registerForm  = document.getElementById('register-form')  || document.querySelector('.woocommerce-form-register');
   const mlRequest     = document.getElementById('magic-link-request');
   const mlSuccess     = document.getElementById('magic-link-success');
   const mlEmailInput  = document.getElementById('magic-link-email');
