@@ -1363,19 +1363,23 @@ document.addEventListener('DOMContentLoaded', () => {
       colRight.insertBefore(registerForm, showRegisterBtn);
     }
 
-    // 2. Move magic-link-form into left column (before login form)
-    if (colLeft && loginForm) {
-      colLeft.insertBefore(magicLinkForm, loginForm);
-    } else if (colLeft) {
-      colLeft.appendChild(magicLinkForm);
+    // 2. Move magic-link-form into left column (before login form) and make it visible
+    if (magicLinkForm && colLeft) {
+      if (loginForm) {
+        colLeft.insertBefore(magicLinkForm, loginForm);
+      } else {
+        colLeft.appendChild(magicLinkForm);
+      }
+      // Remove is-hidden class and force visibility via inline style — bypass all CSS battles
+      magicLinkForm.classList.remove('is-hidden');
+      magicLinkForm.removeAttribute('aria-hidden');
+      magicLinkForm.style.cssText += ';display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;';
     }
 
     // 3. Remove now-empty WooCommerce wrapper
     if (customerLogin) customerLogin.remove();
 
-    // 4. CSS (injected by PHP) already hides #login-form and shows #magic-link-form
-    //    by default inside .mb-col-left. JS only needs to toggle .mb-show-password
-    //    on body to switch views. aria-hidden is kept in sync for accessibility.
+    // 4. JS toggles .mb-show-password on body to switch between magic link and password views.
     function showPasswordView() {
       document.body.classList.add('mb-show-password');
       if (loginForm)    loginForm.setAttribute('aria-hidden', 'false');
